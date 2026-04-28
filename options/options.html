@@ -2,177 +2,233 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flow — Settings</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-  </div>
+<div class="layout">
 
-  <div class="layout">
-    <!-- Sidebar -->
-    <nav class="sidebar">
-      <div class="sidebar-logo">
-        <div class="logo-icon">⚡</div>
-        <span>Flow</span>
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-mark">
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 1.5L4.5 7.5h3L5.5 12.5l6-7.5H8L8 1.5Z" fill="white" stroke="white" stroke-width="0.4" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <ul class="nav-list">
-        <li><a class="nav-link active" data-tab="api" href="#">🔑 API Key</a></li>
-        <li><a class="nav-link" data-tab="blocklist" href="#">🚫 Blocklist</a></li>
-        <li><a class="nav-link" data-tab="whitelist" href="#">✅ Whitelist</a></li>
-        <li><a class="nav-link" data-tab="stats" href="#">📊 Stats</a></li>
-        <li><a class="nav-link" data-tab="appeals" href="#">🤝 Appeals</a></li>
-      </ul>
-    </nav>
+      <div>
+        <div class="sidebar-name">Flow</div>
+        <div class="sidebar-sub">Settings</div>
+      </div>
+    </div>
 
-    <!-- Content -->
-    <main class="content">
+    <div class="sidebar-nav">
+      <button class="nav-item active" data-tab="api">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="6" width="12" height="8" rx="2" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 6V4.5a3 3 0 0 1 6 0V6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          <circle cx="8" cy="10" r="1" fill="currentColor"/>
+        </svg>
+        API Key
+      </button>
+      <button class="nav-item" data-tab="blocklist">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M4.5 4.5l7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Blocklist
+      </button>
+      <button class="nav-item" data-tab="whitelist">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Always Allow
+      </button>
+      <button class="nav-item" data-tab="stats">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="10" width="3" height="4" rx="1" fill="currentColor" opacity="0.5"/>
+          <rect x="6.5" y="7" width="3" height="7" rx="1" fill="currentColor" opacity="0.7"/>
+          <rect x="11" y="3" width="3" height="11" rx="1" fill="currentColor"/>
+        </svg>
+        Stats
+      </button>
+      <button class="nav-item" data-tab="appeals">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2a6 6 0 1 0 4.5 10L14 14l-2-1.5A6 6 0 0 0 8 2Z" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 6v3M8 10.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Appeals
+      </button>
+    </div>
+  </nav>
 
-      <!-- ── API Key Tab ── -->
-      <section class="tab-panel active" id="tab-api">
-        <h1 class="page-title">API Configuration</h1>
-        <p class="page-desc">Flow uses Google Gemini to analyze your goals and make blocking decisions. Your key is stored locally — never sent anywhere else.</p>
+  <!-- Content -->
+  <main class="content">
 
-        <div class="card">
-          <div class="card-header">
-            <h2>Gemini API Key</h2>
-            <span class="badge" id="api-status-badge">Not configured</span>
+    <!-- API Key -->
+    <section class="tab-panel active" id="tab-api">
+      <div class="page-hd">
+        <h1 class="page-title">API Key</h1>
+        <p class="page-desc">Connect your Gemini API key to unlock AI-powered blocking and appeals. Your key is stored locally and never leaves your device.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div>
+            <div class="card-hd-title">Gemini API Key</div>
+            <div class="card-hd-sub">Google AI Studio · gemini-1.5-flash</div>
           </div>
-
-          <div class="field-group">
-            <label class="field-label">API Key</label>
-            <div class="key-input-row">
-              <input type="password" class="text-input" id="api-key-input" placeholder="AIza..." autocomplete="off" />
-              <button class="btn btn-ghost icon-btn-eye" id="btn-toggle-key">👁</button>
+          <span class="badge" id="api-status-badge">Not configured</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label class="field-label">Secret key</label>
+            <div class="input-row">
+              <input type="password" class="text-input" id="api-key-input" placeholder="AIzaSy..." autocomplete="off" spellcheck="false" />
+              <button class="btn btn-ghost btn-sm" id="btn-toggle-key" style="flex-shrink:0">Show</button>
             </div>
             <p class="field-hint">
-              Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link">aistudio.google.com</a> · Uses <strong>gemini-1.5-flash</strong> (generous free quota)
+              Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a> — uses <code>gemini-1.5-flash</code> with a generous free quota.
             </p>
           </div>
-
           <div class="btn-row">
-            <button class="btn btn-primary" id="btn-save-key">Save Key</button>
-            <button class="btn btn-danger-ghost" id="btn-clear-key" style="display:none">Remove Key</button>
+            <button class="btn btn-primary" id="btn-save-key">Save key</button>
+            <button class="btn btn-danger" id="btn-clear-key" style="display:none">Remove</button>
           </div>
-
-          <div class="success-msg" id="api-success" style="display:none">✅ API key saved! AI features are now active.</div>
-          <div class="error-msg" id="api-error" style="display:none"></div>
+          <div class="msg msg-success" id="api-success" style="display:none">API key saved. AI features are now active.</div>
+          <div class="msg msg-error"   id="api-error"   style="display:none"></div>
         </div>
+      </div>
 
-        <div class="card feature-card">
-          <h3>What AI features unlock</h3>
-          <ul class="feature-list">
-            <li>⚡ <strong>Auto blocklist</strong> — Gemini analyzes your goal and suggests sites to block</li>
-            <li>🤝 <strong>Appeal system</strong> — Ask AI if a blocked site actually helps your goal</li>
-            <li>💡 <strong>Smart reasoning</strong> — Each blocked site shows why it was blocked</li>
-          </ul>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-title">What unlocks with an API key</div>
         </div>
-      </section>
+        <ul class="feature-list card-body" style="padding:0">
+          <li class="feature-item" style="padding:13px 22px">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-body">
+              <div class="feature-name">AI-powered blocklist</div>
+              <div class="feature-desc">Gemini reads your goal and decides which sites distract you — no manual setup needed.</div>
+            </div>
+          </li>
+          <li class="feature-item" style="padding:13px 22px">
+            <div class="feature-icon">💬</div>
+            <div class="feature-body">
+              <div class="feature-name">Appeal system</div>
+              <div class="feature-desc">Think a block is wrong? Make your case and the AI decides whether to grant access.</div>
+            </div>
+          </li>
+          <li class="feature-item" style="padding:13px 22px;border-bottom:none">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-body">
+              <div class="feature-name">Block reasoning</div>
+              <div class="feature-desc">Each blocked site shows exactly why it was flagged based on your goal.</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
 
-      <!-- ── Blocklist Tab ── -->
-      <section class="tab-panel" id="tab-blocklist">
+    <!-- Blocklist -->
+    <section class="tab-panel" id="tab-blocklist">
+      <div class="page-hd">
         <h1 class="page-title">Blocklist</h1>
-        <p class="page-desc">Sites added here are always blocked, regardless of your goal.</p>
+        <p class="page-desc">Sites added here are always blocked, regardless of your current goal.</p>
+      </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h2>Manual Blocklist</h2>
-            <span class="badge" id="manual-badge">0 sites</span>
-          </div>
-          <div class="add-row">
-            <input type="text" class="text-input" id="manual-input" placeholder="e.g. reddit.com, tiktok.com" />
-            <button class="btn btn-primary btn-sm" id="btn-add-manual">Add</button>
-          </div>
-          <ul class="site-list" id="manual-sites-list">
-            <li class="empty-state">No sites manually blocked yet.</li>
-          </ul>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-title">Manual blocklist</div>
+          <span class="badge" id="manual-badge">0 sites</span>
         </div>
-
-        <div class="card" id="ai-blocklist-card" style="display:none">
-          <div class="card-header">
-            <h2>AI Generated Blocklist</h2>
-            <span class="badge ai" id="ai-badge">0 sites</span>
-          </div>
-          <p class="field-hint" style="margin-bottom:12px">Generated based on today's goal. Resets each day.</p>
-          <ul class="site-list ai-list" id="ai-sites-list"></ul>
+        <div class="add-row">
+          <input type="text" class="text-input" id="manual-input" placeholder="reddit.com, tiktok.com" />
+          <button class="btn btn-primary btn-sm" id="btn-add-manual" style="flex-shrink:0">Add</button>
         </div>
-      </section>
+        <ul class="site-list" id="manual-sites-list">
+          <li class="empty-row">No sites blocked yet</li>
+        </ul>
+      </div>
 
-      <!-- ── Whitelist Tab ── -->
-      <section class="tab-panel" id="tab-whitelist">
+      <div class="card" id="ai-blocklist-card" style="display:none">
+        <div class="card-hd">
+          <div>
+            <div class="card-hd-title">AI-generated blocklist</div>
+            <div class="card-hd-sub">Based on today's goal — resets at midnight</div>
+          </div>
+          <span class="badge ai" id="ai-badge">0 sites</span>
+        </div>
+        <ul class="site-list ai-list" id="ai-sites-list"></ul>
+      </div>
+    </section>
+
+    <!-- Whitelist -->
+    <section class="tab-panel" id="tab-whitelist">
+      <div class="page-hd">
         <h1 class="page-title">Always Allow</h1>
-        <p class="page-desc">Sites on this list will <strong>never</strong> be blocked, even if they appear on the AI blocklist.</p>
+        <p class="page-desc">Sites on this list are <strong>never blocked</strong> — even if Gemini flags them.</p>
+      </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h2>Always-Allow List</h2>
-            <span class="badge success" id="whitelist-badge">0 sites</span>
-          </div>
-          <div class="add-row">
-            <input type="text" class="text-input" id="whitelist-input" placeholder="e.g. coursera.org, notion.so" />
-            <button class="btn btn-success btn-sm" id="btn-add-whitelist">Add</button>
-          </div>
-          <ul class="site-list" id="whitelist-sites-list">
-            <li class="empty-state">No sites whitelisted yet.</li>
-          </ul>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-title">Allowed sites</div>
+          <span class="badge" id="whitelist-badge">0 sites</span>
         </div>
-      </section>
+        <div class="add-row">
+          <input type="text" class="text-input" id="whitelist-input" placeholder="coursera.org, notion.so" />
+          <button class="btn btn-success btn-sm" id="btn-add-whitelist" style="flex-shrink:0">Add</button>
+        </div>
+        <ul class="site-list" id="whitelist-sites-list">
+          <li class="empty-row">No sites allowed yet</li>
+        </ul>
+      </div>
+    </section>
 
-      <!-- ── Stats Tab ── -->
-      <section class="tab-panel" id="tab-stats">
+    <!-- Stats -->
+    <section class="tab-panel" id="tab-stats">
+      <div class="page-hd">
         <h1 class="page-title">Stats</h1>
-        <p class="page-desc">Your focus activity over time.</p>
+        <p class="page-desc">Your blocking activity over time.</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-tile"><div class="stat-num" id="stat-today">0</div><div class="stat-lbl">Blocked today</div></div>
+        <div class="stat-tile"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">All time</div></div>
+        <div class="stat-tile"><div class="stat-num" id="stat-streak">0</div><div class="stat-lbl">Day streak</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-hd-title">Most blocked</div></div>
+        <ul class="site-list" id="top-sites-list">
+          <li class="empty-row">No data yet</li>
+        </ul>
+      </div>
+    </section>
 
-        <div class="stats-grid" id="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value" id="stat-today">0</div>
-            <div class="stat-label">Blocked today</div>
+    <!-- Appeals -->
+    <section class="tab-panel" id="tab-appeals">
+      <div class="page-hd">
+        <h1 class="page-title">Appeals</h1>
+        <p class="page-desc">Log of all appeals you've submitted to Flow AI.</p>
+      </div>
+      <div class="card">
+        <div class="quota-card">
+          <div class="quota-row">
+            <span class="quota-label">Appeals used today</span>
+            <span class="quota-value"><span id="appeals-used">0</span> / 15</span>
           </div>
-          <div class="stat-card">
-            <div class="stat-value" id="stat-total">0</div>
-            <div class="stat-label">All time blocked</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value" id="stat-streak">0</div>
-            <div class="stat-label">Day streak</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Most Blocked Sites</h2>
-          <ul class="site-list" id="top-sites-list" style="margin-top:12px">
-            <li class="empty-state">No data yet.</li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- ── Appeals Tab ── -->
-      <section class="tab-panel" id="tab-appeals">
-        <h1 class="page-title">Appeal History</h1>
-        <p class="page-desc">A log of all appeals you've submitted to Flow AI.</p>
-
-        <div class="appeals-counter card">
-          <div class="appeals-today-wrap">
-            <span class="appeals-today-label">Appeals used today</span>
-            <span class="appeals-today-val"><span id="appeals-used">0</span> / 15</span>
-          </div>
-          <div class="appeals-bar-bg">
-            <div class="appeals-bar-fill" id="appeals-bar"></div>
+          <div class="quota-track">
+            <div class="quota-fill" id="appeals-bar" style="width:0%"></div>
           </div>
         </div>
-
-        <div class="appeals-list" id="appeals-list">
-          <div class="empty-state">No appeals submitted yet.</div>
+        <div class="appeal-list" id="appeals-list">
+          <div class="empty-row">No appeals yet</div>
         </div>
-      </section>
+      </div>
+    </section>
 
-    </main>
-  </div>
-
-  <script src="options.js"></script>
+  </main>
+</div>
+<script src="options.js"></script>
 </body>
 </html>

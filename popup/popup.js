@@ -32,75 +32,69 @@ function renderUI() {
 
   if (state.pauseUntil && Date.now() < state.pauseUntil) {
     const mins = Math.ceil((state.pauseUntil - Date.now()) / 60000);
-    dot.className = 'status-dot paused';
+    dot.className = 'status-indicator paused';
     statusText.textContent = `Paused · ${mins}m remaining`;
   } else if (!state.blockingEnabled) {
-    dot.className = 'status-dot off';
+    dot.className = 'status-indicator off';
     statusText.textContent = 'Blocking off';
   } else {
-    dot.className = 'status-dot active';
+    dot.className = 'status-indicator' + (state.goal ? ' on' : ' off');
     statusText.textContent = state.goal ? 'Blocking active' : 'Waiting for goal';
   }
 
   // Stat chip
   const totalBlocked = (state.manualBlocklist?.length || 0) + (state.aiBlocklist?.length || 0);
-  if (totalBlocked > 0) statChip.textContent = `${totalBlocked} sites`;
+  if (totalBlocked > 0) { statChip.textContent = `${totalBlocked} sites`; statChip.style.display = ''; }
 
   // API key banner
-  if (!state.hasApiKey) {
-    document.getElementById('api-banner').style.display = 'flex';
-  }
+  document.getElementById('api-banner').style.display = !state.hasApiKey ? 'flex' : 'none';
 
   // Controls
-  document.getElementById('controls').style.display = 'flex';
-  if (!state.blockingEnabled) {
-    document.getElementById('btn-toggle-off').style.display = 'none';
-    document.getElementById('btn-toggle-on').style.display = 'flex';
-  } else {
-    document.getElementById('btn-toggle-off').style.display = 'flex';
-    document.getElementById('btn-toggle-on').style.display = 'none';
-  }
+  document.getElementById('controls').style.display = 'block';
+  document.getElementById('btn-toggle-off').style.display = state.blockingEnabled ? '' : 'none';
+  document.getElementById('btn-toggle-on').style.display = !state.blockingEnabled ? '' : 'none';
 
   // Manual blocklist
-  renderBlocklist(state.manualBlocklist || [], 'manual-list', 'manual-empty', 'manual-count', false);
+  renderBlocklist(state.manualBlocklist || [], 'manual-list', 'manual-count', false);
 
   // AI blocklist
   const aiList = state.aiBlocklist || [];
   if (aiList.length > 0 && state.hasApiKey) {
     document.getElementById('ai-section').style.display = 'block';
-    renderBlocklist(aiList, 'ai-list', null, 'ai-count', true);
+    renderBlocklist(aiList, 'ai-list', 'ai-count', true);
   }
 }
 
-function renderBlocklist(items, listId, emptyId, countId, isAI) {
+function renderBlocklist(items, listId, countId, isAI) {
   const list = document.getElementById(listId);
-  const count = document.getElementById(countId);
-  count.textContent = items.length;
+  const countEl = document.getElementById(countId);
+  if (countEl) countEl.textContent = items.length;
 
   list.innerHTML = '';
-  if (items.length === 0 && emptyId) {
-    const empty = document.createElement('li');
-    empty.className = 'site-empty';
-    empty.textContent = 'No sites added yet.';
-    list.appendChild(empty);
+  if (items.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'list-empty';
+    li.textContent = isAI ? 'No AI sites yet' : 'No sites added yet';
+    list.appendChild(li);
     return;
   }
 
   items.forEach((item, idx) => {
     const domain = typeof item === 'string' ? item : item.domain;
-    const reason = typeof item === 'object' ? item.reason : null;
+    const reason = typeof item === 'object' && item.reason ? item.reason : null;
     const li = document.createElement('li');
-    li.className = 'site-item';
+    li.className = `site-item${isAI ? ' ai' : ''}`;
     li.innerHTML = `
-      <span class="site-item-domain">${domain}</span>
-      ${reason ? `<span class="site-item-reason" title="${reason}">${reason}</span>` : ''}
-      ${!isAI ? `<button class="btn-remove" data-index="${idx}" title="Remove">✕</button>` : ''}
+      <div class="site-dot"></div>
+      <span class="site-name">${domain}</span>
+      ${reason ? `<span class="site-reason" title="${reason}">${reason}</span>` : ''}
+      ${!isAI ? `<button class="remove-btn" data-index="${idx}" aria-label="Remove">✕</button>` : ''}
     `;
     list.appendChild(li);
   });
 
   if (!isAI) {
-    list.querySelectorAll('.btn-remove').forEach((btn) => {
+    list.querySelectorAll('.remove-btn').forEach((btn) => {
       btn.addEventListener('click', () => removeSite(parseInt(btn.dataset.index)));
     });
   }
@@ -161,7 +155,7 @@ async function addSite() {
   await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
   input.value = '';
   state.manualBlocklist = updated;
-  renderBlocklist(updated, 'manual-list', 'manual-empty', 'manual-count', false);
+  renderBlocklist(updated, 'manual-list', 'manual-count', false);
   document.getElementById('manual-count').textContent = updated.length;
 }
 
@@ -171,7 +165,7 @@ async function removeSite(index) {
   await chrome.storage.local.set({ manualBlocklist: updated });
   await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
   state.manualBlocklist = updated;
-  renderBlocklist(updated, 'manual-list', 'manual-empty', 'manual-count', false);
+  renderBlocklist(updated, 'manual-list', 'manual-count', false);
 }
 
 // ─── Controls ─────────────────────────────────────────────────────────────────

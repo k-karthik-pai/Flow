@@ -3,13 +3,12 @@
 let state = null;
 
 // ─── Tab Navigation ───────────────────────────────────────────────────────────
-document.querySelectorAll('.nav-link').forEach((link) => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const tab = link.dataset.tab;
-    document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.nav-item').forEach((b) => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
-    link.classList.add('active');
+    btn.classList.add('active');
     document.getElementById(`tab-${tab}`).classList.add('active');
   });
 });
@@ -29,8 +28,8 @@ function loadApiTab() {
   const badge = document.getElementById('api-status-badge');
   const clearBtn = document.getElementById('btn-clear-key');
   if (state.hasApiKey) {
-    badge.textContent = 'Configured ✓';
-    badge.className = 'badge active';
+    badge.textContent = 'Configured';
+    badge.className = 'badge configured';
     clearBtn.style.display = 'inline-flex';
     document.getElementById('api-key-input').value = '••••••••••••••••';
   } else {
@@ -43,13 +42,15 @@ function loadApiTab() {
 // Toggle key visibility
 document.getElementById('btn-toggle-key').addEventListener('click', async () => {
   const input = document.getElementById('api-key-input');
+  const btn = document.getElementById('btn-toggle-key');
   if (input.type === 'password') {
-    // Show real key from storage
     const { apiKey } = await chrome.storage.local.get(['apiKey']);
     input.value = apiKey || '';
     input.type = 'text';
+    btn.textContent = 'Hide';
   } else {
     input.type = 'password';
+    btn.textContent = 'Show';
     if (state.hasApiKey) input.value = '••••••••••••••••';
   }
 });
@@ -62,13 +63,14 @@ document.getElementById('btn-save-key').addEventListener('click', async () => {
   errorEl.style.display = 'none';
   successEl.style.display = 'none';
 
-  if (!key || key.startsWith('•')) { errorEl.textContent = 'Please enter a valid API key.'; errorEl.style.display = 'block'; return; }
-  if (!key.startsWith('AIza')) { errorEl.textContent = 'Gemini keys start with "AIza". Double check your key.'; errorEl.style.display = 'block'; return; }
+  if (!key || key.startsWith('•')) { errorEl.textContent = 'Enter a valid API key.'; errorEl.style.display = 'flex'; return; }
+  if (!key.startsWith('AIza')) { errorEl.textContent = 'Gemini keys start with "AIza". Double-check your key.'; errorEl.style.display = 'flex'; return; }
 
   await chrome.storage.local.set({ apiKey: key });
   input.type = 'password';
   input.value = '••••••••••••••••';
-  successEl.style.display = 'block';
+  document.getElementById('btn-toggle-key').textContent = 'Show';
+  successEl.style.display = 'flex';
   state.hasApiKey = true;
   loadApiTab();
 });
@@ -76,6 +78,8 @@ document.getElementById('btn-save-key').addEventListener('click', async () => {
 document.getElementById('btn-clear-key').addEventListener('click', async () => {
   await chrome.storage.local.remove(['apiKey']);
   document.getElementById('api-key-input').value = '';
+  document.getElementById('api-key-input').type = 'password';
+  document.getElementById('btn-toggle-key').textContent = 'Show';
   document.getElementById('api-success').style.display = 'none';
   state.hasApiKey = false;
   loadApiTab();
@@ -153,8 +157,8 @@ function renderSiteList(items, listId, badgeId, onRemove, isAI) {
 
   if (items.length === 0) {
     const li = document.createElement('li');
-    li.className = 'empty-state';
-    li.textContent = isAI ? 'No AI blocklist generated yet.' : 'No sites added yet.';
+    li.className = 'empty-row';
+    li.textContent = isAI ? 'No AI blocklist yet' : 'No sites added yet';
     list.appendChild(li);
     return;
   }
@@ -165,12 +169,13 @@ function renderSiteList(items, listId, badgeId, onRemove, isAI) {
     const li = document.createElement('li');
     li.className = 'site-item';
     li.innerHTML = `
+      <div class="site-favicon">🌐</div>
       <span class="site-name">${domain}</span>
       ${reason ? `<span class="site-reason" title="${reason}">${reason}</span>` : ''}
-      ${onRemove ? `<button class="btn-remove" title="Remove">✕</button>` : ''}
+      ${onRemove ? `<button class="site-remove" title="Remove"><svg viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` : ''}
     `;
     if (onRemove) {
-      li.querySelector('.btn-remove').addEventListener('click', () => onRemove(domain));
+      li.querySelector('.site-remove').addEventListener('click', () => onRemove(domain));
     }
     list.appendChild(li);
   });
@@ -230,7 +235,7 @@ function loadAppealsTab() {
   list.innerHTML = '';
 
   if (!appeals.length) {
-    list.innerHTML = '<div class="empty-state">No appeals submitted yet.</div>';
+    list.innerHTML = '<div class="empty-row">No appeals yet</div>';
     return;
   }
 
@@ -239,14 +244,15 @@ function loadAppealsTab() {
     const div = document.createElement('div');
     div.className = 'appeal-item';
     div.innerHTML = `
-      <div class="appeal-meta">
+      <div class="appeal-row1">
         <span class="appeal-domain">${a.domain}</span>
-        <span class="appeal-verdict ${a.allowed ? 'allow' : 'deny'}">${a.allowed ? 'Allowed' : 'Denied'}</span>
+        <span class="badge ${a.allowed ? 'allow' : 'deny'}">${a.allowed ? 'Allowed' : 'Denied'}</span>
         <span class="appeal-date">${date}</span>
       </div>
-      <div class="appeal-reason-label">Your reason</div>
-      <div class="appeal-reason-text">${a.userReason}</div>
-      <div class="appeal-ai-reasoning">🤖 ${a.aiVerdict}</div>
+      <div class="appeal-user-label">Your reason</div>
+      <div class="appeal-text">${a.userReason}</div>
+      <div class="appeal-ai-label">AI verdict</div>
+      <div class="appeal-text">${a.aiVerdict}</div>
     `;
     list.appendChild(div);
   });
