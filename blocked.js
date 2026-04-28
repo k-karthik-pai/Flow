@@ -46,21 +46,6 @@ async function loadState() {
   }
 }
 
-// ─── Pause Blocking ───────────────────────────────────────────────────────────
-document.getElementById('btn-pause').addEventListener('click', async () => {
-  const btn = document.getElementById('btn-pause');
-  btn.disabled = true;
-  btn.textContent = 'Pausing...';
-  try {
-    await chrome.runtime.sendMessage({ type: 'PAUSE_BLOCKING', minutes: 15 });
-    btn.textContent = '✅ Paused 15 min';
-    setTimeout(() => history.back(), 800);
-  } catch {
-    btn.textContent = '⚠ Error';
-    btn.disabled = false;
-  }
-});
-
 // ─── Appeal ───────────────────────────────────────────────────────────────────
 const textarea = document.getElementById('appeal-input');
 const charCount = document.getElementById('char-count');
