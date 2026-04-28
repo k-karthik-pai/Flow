@@ -2,92 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flow — New Tab</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <title>Flow — Set Today's Goal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="newtab.css" />
+  <script src="../utils/theme.js"></script>
 </head>
 <body>
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-  </div>
-
   <main class="container">
-    <!-- Header -->
-    <header class="header">
-      <div class="logo">
-        <div class="logo-icon">⚡</div>
-        <span class="logo-text">Flow</span>
-      </div>
-      <div class="clock" id="clock"></div>
-    </header>
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 18 18" fill="none"><rect width="18" height="18" rx="4" fill="var(--primary)"/><path d="M10 3L6 9.5h3.5L7 15l6-8h-3.5L10 3Z" fill="white"/></svg>
+      <span>Flow</span>
+    </div>
 
-    <!-- Goal Input Section (shown when no goal set) -->
-    <section class="goal-section" id="goal-input-section">
+    <div class="clock" id="clock"></div>
+
+    <!-- Goal input -->
+    <section id="goal-input-section">
       <div class="greeting" id="greeting"></div>
-      <h1 class="headline">What's your <span class="gradient-text">goal</span> today?</h1>
-      <p class="subline">Set your focus intention and Flow will block everything that gets in the way.</p>
-
-      <div class="goal-input-wrap">
-        <textarea
-          id="goal-input"
-          class="goal-textarea"
-          placeholder="e.g., Finish the machine learning assignment and review chapter 5..."
-          maxlength="300"
-          rows="3"
-          autofocus
-        ></textarea>
+      <h1 class="headline">What are you <span class="accent">focusing on</span> today?</h1>
+      <p class="subline">Set your intention and Flow will keep distractions away.</p>
+      <div class="input-card">
+        <textarea id="goal-input" class="textarea" placeholder="e.g., Finish the ML assignment and review chapter 5…" maxlength="300" rows="3" autofocus></textarea>
         <div class="input-footer">
-          <span class="char-hint" id="char-hint">0 / 300</span>
-          <button class="btn btn-primary" id="btn-set-goal">
-            <span id="goal-btn-text">Start Focusing ⚡</span>
+          <span class="char-hint" id="char-hint">0/300</span>
+          <button class="btn btn-filled" id="btn-set-goal">
+            <span id="goal-btn-text">Start focusing</span>
             <div class="spinner" id="goal-spinner" style="display:none"></div>
           </button>
         </div>
       </div>
-
-      <div class="ai-note" id="ai-note" style="display:none">
-        <span class="ai-badge">AI</span>
-        Analyzing your goal and building a custom blocklist...
-      </div>
-
-      <div class="error-msg" id="goal-error" style="display:none"></div>
+      <div class="msg msg-err" id="goal-error" style="display:none"></div>
     </section>
 
-    <!-- Goal Active Section (shown when goal is set) -->
-    <section class="active-section" id="goal-active-section" style="display:none">
+    <!-- Active goal -->
+    <section id="goal-active-section" style="display:none">
       <div class="greeting" id="greeting-active"></div>
-      <h1 class="headline-sm">You're in <span class="gradient-text">Flow</span></h1>
-
-      <div class="current-goal-card">
-        <div class="goal-card-label">Today's goal</div>
-        <div class="goal-card-text" id="active-goal-text"></div>
-        <button class="btn btn-ghost btn-sm" id="btn-change-goal">Change goal</button>
+      <h1 class="headline-sm">You're in <span class="accent">focus</span></h1>
+      <div class="active-card">
+        <div class="active-label">Today's goal</div>
+        <div class="active-text" id="active-goal-text"></div>
+        <button class="text-btn" id="btn-change-goal">Change goal</button>
       </div>
-
       <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-value" id="stat-blocked">0</div>
-          <div class="stat-label">Sites blocked</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-appeals">—</div>
-          <div class="stat-label">Appeals left</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="stat-ai">—</div>
-          <div class="stat-label">AI domains</div>
-        </div>
-      </div>
-
-      <div class="search-bar-wrap">
-        <input type="text" class="search-bar" id="search-input" placeholder="Search Google..." />
-        <button class="btn btn-search" id="btn-search">→</button>
+        <div class="stat-item"><div class="stat-num" id="stat-blocked">0</div><div class="stat-lbl">Blocked</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-appeals">—</div><div class="stat-lbl">Appeals left</div></div>
+        <div class="stat-item"><div class="stat-num" id="stat-ai">—</div><div class="stat-lbl">AI sites</div></div>
       </div>
     </section>
   </main>
-
   <script src="newtab.js"></script>
 </body>
 </html>

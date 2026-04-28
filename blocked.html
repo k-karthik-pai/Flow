@@ -2,95 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blocked — Flow</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="blocked.css" />
+  <script src="utils/theme.js"></script>
 </head>
 <body>
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-
-  <main class="container">
-    <!-- Flow Logo -->
+  <div class="wrap">
     <div class="logo">
-      <div class="logo-icon">⚡</div>
+      <svg width="20" height="20" viewBox="0 0 18 18" fill="none"><rect width="18" height="18" rx="4" fill="var(--primary)"/><path d="M10 3L6 9.5h3.5L7 15l6-8h-3.5L10 3Z" fill="white"/></svg>
       <span>Flow</span>
     </div>
 
-    <!-- Block Card -->
-    <div class="card block-card">
-      <div class="block-icon">🚫</div>
-      <h1 id="block-domain">Site Blocked</h1>
-      <p class="block-subtitle">This site was blocked to keep you focused.</p>
-
-      <!-- Goal reminder -->
-      <div class="goal-reminder" id="goal-reminder">
-        <div class="goal-label">Your goal today</div>
-        <div class="goal-text" id="goal-text">Loading...</div>
-      </div>
-
-      <!-- AI Reason -->
-      <div class="ai-reason" id="ai-reason" style="display:none">
-        <span class="ai-badge">AI</span>
-        <span id="ai-reason-text"></span>
-      </div>
-
-      <!-- Actions -->
-      <div class="actions">
-        <button class="btn btn-ghost" id="btn-back" onclick="history.back()">
-          ← Go Back
-        </button>
-        <button class="btn btn-pause" id="btn-pause">
-          ⏸ Pause 15 min
-        </button>
-      </div>
-    </div>
-
-    <!-- Appeal Section -->
-    <div class="card appeal-card" id="appeal-section">
-      <div class="appeal-header">
-        <h2>Think this is a mistake?</h2>
-        <div class="appeal-count" id="appeal-count"></div>
-      </div>
-      <p class="appeal-desc">Explain how this site helps your goal today. Flow AI will decide.</p>
-
-      <textarea
-        id="appeal-input"
-        class="appeal-textarea"
-        placeholder="e.g., I need YouTube to watch a tutorial on PyTorch for my ML assignment..."
-        maxlength="500"
-        rows="3"
-      ></textarea>
-
-      <div class="char-count"><span id="char-count">0</span>/500</div>
-
-      <button class="btn btn-primary" id="btn-appeal">
-        <span id="appeal-btn-text">Submit to Flow AI</span>
-        <div class="spinner" id="appeal-spinner" style="display:none"></div>
-      </button>
-
-      <!-- Verdict -->
-      <div class="verdict" id="verdict" style="display:none">
-        <div class="verdict-icon" id="verdict-icon"></div>
-        <div class="verdict-content">
-          <div class="verdict-title" id="verdict-title"></div>
-          <div class="verdict-reason" id="verdict-reason"></div>
+    <div class="card">
+      <div class="card-body">
+        <div class="block-icon">🚫</div>
+        <div class="block-domain" id="block-domain">Site Blocked</div>
+        <p class="block-sub">This site was blocked to keep you focused.</p>
+        <div class="goal-box" id="goal-reminder">
+          <div class="goal-label">Your goal today</div>
+          <div class="goal-text" id="goal-text">Loading…</div>
+        </div>
+        <div class="ai-box" id="ai-reason" style="display:none">
+          <span class="ai-tag">AI</span>
+          <span id="ai-reason-text"></span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline" id="btn-back" onclick="history.back()">← Go back</button>
+          <button class="btn btn-warn" id="btn-pause">Pause 15 min</button>
         </div>
       </div>
     </div>
 
-    <!-- No API Key message -->
-    <div class="card no-api-card" id="no-api-card" style="display:none">
-      <p>Add a <strong>Gemini API key</strong> in Flow settings to use the AI appeal system.</p>
-      <button class="btn btn-ghost btn-sm" id="btn-settings">Open Settings</button>
+    <div class="card" id="appeal-section">
+      <div class="appeal-hd">
+        <h2>Think this is a mistake?</h2>
+        <span class="appeal-count" id="appeal-count"></span>
+      </div>
+      <div class="appeal-body">
+        <p class="appeal-desc">Explain how this site helps your goal. Flow AI will decide.</p>
+        <textarea id="appeal-input" class="textarea" placeholder="e.g., I need this for a tutorial on…" maxlength="500" rows="3"></textarea>
+        <div class="char"><span id="char-count">0</span>/500</div>
+        <button class="btn btn-filled" id="btn-appeal">
+          <span id="appeal-btn-text">Submit appeal</span>
+          <div class="spinner" id="appeal-spinner" style="display:none"></div>
+        </button>
+        <div class="verdict" id="verdict" style="display:none">
+          <div class="verdict-icon" id="verdict-icon"></div>
+          <div><div class="verdict-title" id="verdict-title"></div><div class="verdict-reason" id="verdict-reason"></div></div>
+        </div>
+      </div>
     </div>
-  </main>
 
+    <div class="card" id="no-api-card" style="display:none">
+      <div class="card-body no-api">
+        <p>Add a Gemini API key in <a id="btn-settings">Flow settings</a> to use the appeal system.</p>
+      </div>
+    </div>
+  </div>
   <script src="blocked.js"></script>
 </body>
 </html>

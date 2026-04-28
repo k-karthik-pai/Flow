@@ -129,7 +129,7 @@ function setLoading(loading) {
 
 function showVerdict(allow, title, reason) {
   const el = document.getElementById('verdict');
-  el.className = `verdict ${allow ? 'allow' : 'deny'}`;
+  el.className = `verdict ${allow ? 'ok' : 'no'}`;
   el.style.display = 'flex';
   document.getElementById('verdict-icon').textContent = allow ? '✅' : '❌';
   document.getElementById('verdict-title').textContent = title;

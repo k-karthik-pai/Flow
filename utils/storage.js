@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   APPEALS_RESET_DATE: 'appealsResetDate',
   STATS: 'stats',
   ONBOARDED: 'onboarded',
+  THEME: 'theme', // 'light' | 'dark' | 'system'
 };
 
 export const MAX_APPEALS_PER_DAY = 15;

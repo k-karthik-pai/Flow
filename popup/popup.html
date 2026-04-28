@@ -3,103 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <title>Flow</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="popup.css" />
+  <script src="../utils/theme.js"></script>
 </head>
 <body>
 <div class="popup">
 
-  <!-- Header -->
   <header class="header">
     <div class="logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M7.5 1.5L4 7h3.5L5.5 11.5l5-6.5H7L7.5 1.5Z" fill="white" stroke="white" stroke-width="0.5" stroke-linejoin="round"/>
-        </svg>
-      </div>
+      <svg class="logo-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect width="18" height="18" rx="4" fill="var(--primary)"/>
+        <path d="M10 3L6 9.5h3.5L7 15l6-8h-3.5L10 3Z" fill="white"/>
+      </svg>
       <span class="logo-name">Flow</span>
     </div>
-    <div class="header-actions">
+    <div class="header-end">
       <button class="icon-btn" id="btn-options" title="Settings">
-        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
-          <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M2.93 2.93l1.06 1.06M12.01 12.01l1.06 1.06M13.07 2.93l-1.06 1.06M3.99 12.01l-1.06 1.06" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.3 3.3l.9.9M11.8 11.8l.9.9M12.7 3.3l-.9.9M4.2 11.8l-.9.9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
       </button>
     </div>
   </header>
 
-  <!-- Goal: Input State -->
-  <section class="goal-section" id="section-set-goal">
-    <div class="goal-eyebrow">Today's focus</div>
-    <div class="goal-textarea-wrap">
-      <textarea id="goal-input" class="goal-input" placeholder="What are you working on today?" rows="2" maxlength="300"></textarea>
+  <!-- Goal input (no goal set) -->
+  <section class="section" id="section-set-goal">
+    <div class="section-label">Today's focus</div>
+    <div class="input-wrap">
+      <textarea id="goal-input" class="textarea" placeholder="What are you working on today?" rows="2" maxlength="300"></textarea>
     </div>
-    <button class="btn-set-goal" id="btn-set-goal">
-      <span id="goal-btn-text">Set focus goal</span>
+    <button class="btn btn-filled" id="btn-set-goal">
+      <span id="goal-btn-text">Set goal</span>
       <div class="spinner" id="goal-spinner" style="display:none"></div>
     </button>
-    <div class="error-msg" id="goal-error" style="display:none"></div>
+    <div class="msg msg-error" id="goal-error" style="display:none"></div>
   </section>
 
-  <!-- Goal: Active State -->
-  <div class="goal-active" id="section-active-goal" style="display:none">
-    <div class="goal-active-indicator"></div>
-    <div class="goal-active-body">
-      <div class="goal-active-label">Focus goal</div>
-      <div class="goal-active-text" id="active-goal-text"></div>
+  <!-- Active goal -->
+  <div class="goal-bar" id="section-active-goal" style="display:none">
+    <div class="goal-bar-dot"></div>
+    <div class="goal-bar-body">
+      <div class="goal-bar-label">Focus goal</div>
+      <div class="goal-bar-text" id="active-goal-text"></div>
     </div>
-    <button class="goal-change-btn" id="btn-reset-goal">Change</button>
+    <button class="text-btn" id="btn-reset-goal">Change</button>
   </div>
 
   <!-- Status -->
   <div class="status-row">
-    <div class="status-indicator" id="status-dot"></div>
-    <span class="status-label" id="status-text">Loading…</span>
-    <span class="status-chip" id="stat-chip" style="display:none"></span>
+    <div class="status-dot" id="status-dot"></div>
+    <span class="status-text" id="status-text">Loading…</span>
+    <span class="chip" id="stat-chip" style="display:none"></span>
   </div>
 
-  <!-- API Key Banner -->
-  <div class="api-banner" id="api-banner" style="display:none">
-    <div class="api-banner-dot"></div>
-    <span class="api-banner-text">Add a Gemini API key to enable AI blocking</span>
-    <button class="api-banner-link" id="btn-banner-settings">Settings →</button>
+  <!-- API key hint -->
+  <div class="hint-bar" id="api-banner" style="display:none">
+    <span class="hint-text">Add a Gemini API key for AI features</span>
+    <button class="text-btn" id="btn-banner-settings">Settings</button>
   </div>
 
-  <!-- Controls -->
-  <div class="controls-section" id="controls" style="display:none">
-    <div class="controls-label">Pause blocking</div>
-    <div class="controls-grid">
-      <button class="ctrl-btn" id="btn-pause-5">5 min</button>
-      <button class="ctrl-btn" id="btn-pause-15">15 min</button>
-      <button class="ctrl-btn" id="btn-pause-30">30 min</button>
-      <button class="ctrl-btn danger" id="btn-toggle-off" style="display:none">Turn off</button>
-      <button class="ctrl-btn success" id="btn-toggle-on" style="display:none">Resume</button>
+  <!-- Pause controls -->
+  <div class="controls" id="controls" style="display:none">
+    <div class="section-label">Pause</div>
+    <div class="controls-row">
+      <button class="btn btn-outline btn-sm" id="btn-pause-5">5 min</button>
+      <button class="btn btn-outline btn-sm" id="btn-pause-15">15 min</button>
+      <button class="btn btn-outline btn-sm" id="btn-pause-30">30 min</button>
+      <button class="btn btn-outline btn-sm btn-danger-text" id="btn-toggle-off" style="display:none">Off</button>
+      <button class="btn btn-outline btn-sm btn-success-text" id="btn-toggle-on" style="display:none">Resume</button>
     </div>
   </div>
 
-  <!-- Manual Blocklist -->
+  <hr class="divider" />
+
+  <!-- Manual blocklist -->
   <div class="section">
-    <div class="section-hd">
-      <span class="section-title">Blocked sites</span>
-      <span class="count-pill" id="manual-count">0</span>
+    <div class="section-row">
+      <span class="section-label">Blocked sites</span>
+      <span class="count" id="manual-count">0</span>
     </div>
     <div class="add-row">
-      <input type="text" class="site-input" id="site-input" placeholder="reddit.com" />
-      <button class="add-btn" id="btn-add-site">+</button>
+      <input type="text" class="input-text" id="site-input" placeholder="reddit.com" />
+      <button class="btn btn-filled btn-icon" id="btn-add-site">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
     </div>
-    <ul class="site-list" id="manual-list">
-      <li class="list-empty">No sites added yet</li>
+    <ul class="list" id="manual-list">
+      <li class="list-empty">No sites added</li>
     </ul>
   </div>
 
-  <!-- AI Blocklist -->
+  <!-- AI blocklist -->
   <div class="section" id="ai-section" style="display:none">
-    <div class="section-hd">
-      <span class="section-title">AI blocked</span>
-      <span class="count-pill ai" id="ai-count">0</span>
+    <div class="section-row">
+      <span class="section-label">AI blocked</span>
+      <span class="count count-ai" id="ai-count">0</span>
     </div>
-    <ul class="site-list" id="ai-list"></ul>
+    <ul class="list" id="ai-list"></ul>
   </div>
 
 </div>
