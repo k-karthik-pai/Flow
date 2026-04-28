@@ -1,0 +1,217 @@
+/* popup.css — Flow Popup Styles */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #09090F;
+  --surface: #12121E;
+  --surface-2: #1A1A2E;
+  --border: rgba(255,255,255,0.07);
+  --primary: #7C3AED;
+  --primary-light: #9F67FF;
+  --accent: #06B6D4;
+  --success: #10B981;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --text: #F1F5F9;
+  --text-2: #94A3B8;
+  --text-3: #64748B;
+}
+
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+.popup { width: 360px; min-height: 400px; max-height: 600px; overflow-y: auto; padding-bottom: 8px; }
+.popup::-webkit-scrollbar { width: 4px; }
+.popup::-webkit-scrollbar-track { background: transparent; }
+.popup::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ─── Header ─── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg); z-index: 10;
+}
+.logo { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; }
+.logo-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.icon-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; padding: 4px; border-radius: 6px;
+  opacity: 0.6; transition: opacity 0.2s;
+}
+.icon-btn:hover { opacity: 1; }
+
+/* ─── Goal Section ─── */
+.goal-section { padding: 14px 16px 12px; }
+.goal-prompt { font-size: 13px; color: var(--text-2); margin-bottom: 10px; }
+.goal-input {
+  width: 100%; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: inherit;
+  font-size: 13px; padding: 10px 12px; resize: none; line-height: 1.5;
+  transition: border-color 0.2s; margin-bottom: 10px;
+}
+.goal-input:focus { outline: none; border-color: rgba(124,58,237,0.5); }
+.goal-input::placeholder { color: var(--text-3); }
+
+/* ─── Active Goal ─── */
+.goal-active {
+  padding: 12px 16px;
+  background: rgba(124,58,237,0.07);
+  border-bottom: 1px solid rgba(124,58,237,0.15);
+  display: flex; align-items: center; gap: 10px;
+}
+.active-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--primary-light); font-weight: 600; flex-shrink: 0;
+}
+.active-goal-text {
+  font-size: 13px; color: var(--text); flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ─── Status Bar ─── */
+.status-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px; color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-3); flex-shrink: 0;
+  transition: background 0.3s;
+}
+.status-dot.active { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.status-dot.paused { background: var(--warning); }
+.status-dot.off { background: var(--text-3); }
+.stat-chip {
+  margin-left: auto; background: var(--surface-2);
+  border-radius: 20px; padding: 2px 8px;
+  font-size: 11px; color: var(--text-3);
+}
+
+/* ─── API Banner ─── */
+.api-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(124,58,237,0.08);
+  border-bottom: 1px solid rgba(124,58,237,0.15);
+  font-size: 12px; color: var(--text-2);
+}
+
+/* ─── Controls ─── */
+.controls {
+  display: flex; gap: 6px; padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.ctrl-btn {
+  flex: 1; padding: 7px 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-2);
+  font-family: inherit; font-size: 11px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.ctrl-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.ctrl-danger { color: var(--danger); border-color: rgba(239,68,68,0.2); }
+.ctrl-danger:hover { background: rgba(239,68,68,0.1); }
+.ctrl-success { color: var(--success); border-color: rgba(16,185,129,0.2); }
+.ctrl-success:hover { background: rgba(16,185,129,0.1); }
+
+/* ─── Blocklist Section ─── */
+.blocklist-section { padding: 12px 16px; }
+.section-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.section-title { font-size: 12px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; }
+.count-badge {
+  background: rgba(124,58,237,0.2); color: var(--primary-light);
+  font-size: 10px; font-weight: 600;
+  padding: 1px 7px; border-radius: 20px;
+}
+.count-badge.ai { background: rgba(6,182,212,0.15); color: var(--accent); }
+
+.add-site-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.site-input {
+  flex: 1; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: inherit;
+  font-size: 13px; padding: 8px 10px;
+}
+.site-input:focus { outline: none; border-color: rgba(124,58,237,0.4); }
+.site-input::placeholder { color: var(--text-3); }
+
+.btn-add {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--primary), #6D28D9);
+  color: white; border: none; border-radius: 8px;
+  font-size: 18px; font-weight: 400; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s;
+}
+.btn-add:hover { transform: scale(1.05); }
+.btn-add:active { transform: scale(0.95); }
+
+.site-list { list-style: none; max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.site-list::-webkit-scrollbar { width: 3px; }
+.site-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.site-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface-2); border-radius: 8px;
+  padding: 7px 10px; font-size: 13px;
+  animation: itemIn 0.2s ease;
+}
+@keyframes itemIn { from { opacity:0; transform: translateX(-8px); } to { opacity:1; transform: translateX(0); } }
+
+.site-item-domain { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-item-reason { font-size: 11px; color: var(--text-3); margin-left: 6px; flex-shrink: 0; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-remove {
+  background: none; border: none; color: var(--text-3);
+  cursor: pointer; font-size: 14px; padding: 0 2px;
+  opacity: 0.6; transition: opacity 0.15s, color 0.15s;
+}
+.btn-remove:hover { opacity: 1; color: var(--danger); }
+.site-empty { font-size: 12px; color: var(--text-3); padding: 6px 0; }
+
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 16px; border-radius: 9px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.2s; width: 100%;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #6D28D9);
+  color: white; box-shadow: 0 3px 12px rgba(124,58,237,0.3);
+}
+.btn-primary:hover { box-shadow: 0 5px 18px rgba(124,58,237,0.45); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.7; cursor: wait; }
+
+.link-btn {
+  background: none; border: none; color: var(--primary-light);
+  font-size: 12px; cursor: pointer; font-family: inherit; flex-shrink: 0;
+}
+.link-btn:hover { text-decoration: underline; }
+
+.error-msg {
+  font-size: 12px; color: #EF4444; margin-top: 8px;
+  padding: 8px 10px; background: rgba(239,68,68,0.08);
+  border-radius: 7px; border: 1px solid rgba(239,68,68,0.2);
+}
+
+.divider { height: 1px; background: var(--border); }
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

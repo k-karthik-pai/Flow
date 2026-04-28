@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flow — New Tab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="newtab.css" />
+</head>
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <main class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <span class="logo-text">Flow</span>
+      </div>
+      <div class="clock" id="clock"></div>
+    </header>
+
+    <!-- Goal Input Section (shown when no goal set) -->
+    <section class="goal-section" id="goal-input-section">
+      <div class="greeting" id="greeting"></div>
+      <h1 class="headline">What's your <span class="gradient-text">goal</span> today?</h1>
+      <p class="subline">Set your focus intention and Flow will block everything that gets in the way.</p>
+
+      <div class="goal-input-wrap">
+        <textarea
+          id="goal-input"
+          class="goal-textarea"
+          placeholder="e.g., Finish the machine learning assignment and review chapter 5..."
+          maxlength="300"
+          rows="3"
+          autofocus
+        ></textarea>
+        <div class="input-footer">
+          <span class="char-hint" id="char-hint">0 / 300</span>
+          <button class="btn btn-primary" id="btn-set-goal">
+            <span id="goal-btn-text">Start Focusing ⚡</span>
+            <div class="spinner" id="goal-spinner" style="display:none"></div>
+          </button>
+        </div>
+      </div>
+
+      <div class="ai-note" id="ai-note" style="display:none">
+        <span class="ai-badge">AI</span>
+        Analyzing your goal and building a custom blocklist...
+      </div>
+
+      <div class="error-msg" id="goal-error" style="display:none"></div>
+    </section>
+
+    <!-- Goal Active Section (shown when goal is set) -->
+    <section class="active-section" id="goal-active-section" style="display:none">
+      <div class="greeting" id="greeting-active"></div>
+      <h1 class="headline-sm">You're in <span class="gradient-text">Flow</span></h1>
+
+      <div class="current-goal-card">
+        <div class="goal-card-label">Today's goal</div>
+        <div class="goal-card-text" id="active-goal-text"></div>
+        <button class="btn btn-ghost btn-sm" id="btn-change-goal">Change goal</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-blocked">0</div>
+          <div class="stat-label">Sites blocked</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-appeals">—</div>
+          <div class="stat-label">Appeals left</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-ai">—</div>
+          <div class="stat-label">AI domains</div>
+        </div>
+      </div>
+
+      <div class="search-bar-wrap">
+        <input type="text" class="search-bar" id="search-input" placeholder="Search Google..." />
+        <button class="btn btn-search" id="btn-search">→</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="newtab.js"></script>
+</body>
+</html>
