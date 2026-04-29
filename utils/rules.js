@@ -13,8 +13,21 @@ function escapeRegexDomain(domain) {
 }
 
 function getDomainRegex(domain) {
-  const escaped = escapeRegexDomain(domain);
-  return `^https?://([a-z0-9\\-]+\\.)*${escaped}(/.*)?$`;
+  // Extract base domain name (e.g. "wikipedia" from "wikipedia.com")
+  // We look for the last part of the domain to determine what to strip
+  const parts = domain.split('.');
+  let baseName = domain;
+  
+  if (parts.length >= 2) {
+    // If it's something like wikipedia.com or google.co.uk
+    // We'll take the first part as the base name if it's a simple domain
+    // or use a more robust way to match "wikipedia" regardless of .com/.org
+    baseName = parts[0];
+  }
+
+  const escaped = baseName.replace(/\./g, '\\.').replace(/-/g, '\\-');
+  // This regex matches: (any subdomains) + baseName + . (any TLD)
+  return `^https?://([a-z0-9\\-]+\\.)*${escaped}\\.[a-z]{2,}(/.*)?$`;
 }
 
 function getRedirectUrl(domain) {
