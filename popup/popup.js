@@ -150,6 +150,8 @@ async function removeSite(idx) {
 }
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
-document.getElementById('btn-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
+const openOptions = () => chrome.runtime.openOptionsPage();
+document.getElementById('btn-options').addEventListener('click', openOptions);
+document.getElementById('btn-settings-footer')?.addEventListener('click', openOptions);
 
 loadState();

@@ -47,12 +47,13 @@ html.dark {
 html, body {
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Prevent double scrollbars */
+  width: 360px; /* Standard extension width */
+  overflow-x: hidden; /* Strictly prevent horizontal sliding */
   background: var(--bg);
 }
 
 body {
-  font-family: 'Inter', 'Google Sans', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   color: var(--t1);
   font-size: 13px;
   line-height: 1.5;
@@ -64,8 +65,8 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 .popup { 
-  width: 380px; 
-  max-height: 600px; 
+  width: 100%; 
+  max-height: 580px; 
   overflow-y: auto; 
   display: flex;
   flex-direction: column;
@@ -239,11 +240,26 @@ html.dark .btn-filled { color: #202124; }
 .msg { font-size: 12px; padding: 8px 10px; border-radius: 8px; margin-top: 8px; }
 .msg-error { background: var(--danger-t); color: var(--danger); }
 
-/* ── Spinner ── */
-.spinner {
-  width: 14px; height: 14px;
-  border: 1.5px solid rgba(255,255,255,0.3); border-top-color: #fff;
-  border-radius: 50%; animation: spin 0.6s linear infinite;
+/* ── Footer ── */
+.footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  background: var(--surface);
 }
-html.dark .spinner { border-color: rgba(32,33,36,0.3); border-top-color: #202124; }
+.footer-link {
+  font-size: 12px;
+  color: var(--t3);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.12s;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.footer-link:hover { color: var(--primary); }
+
 @keyframes spin { to { transform: rotate(360deg); } }
