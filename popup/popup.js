@@ -37,14 +37,17 @@ function renderUI() {
     dot.className = 'status-dot off';
     text.textContent = 'Blocking off';
   } else {
-  dot.className = 'status-dot' + (state.goal ? ' on' : ' off');
-  text.textContent = state.goal ? 'Blocking active' : 'Waiting for goal';
+    dot.className = 'status-dot' + (state.goal ? ' on' : ' off');
+    text.textContent = state.goal ? 'Blocking active' : 'Waiting for goal';
+  }
 
   const total = (state.manualBlocklist?.length || 0) + (state.aiBlocklist?.length || 0);
-  if (total > 0) { chip.textContent = `${total} sites`; chip.style.display = ''; }
-
-  // API key banner
-  document.getElementById('api-banner').style.display = !state.hasApiKey ? 'flex' : 'none';
+  if (total > 0) {
+    chip.textContent = `${total} sites`;
+    chip.style.display = '';
+  } else {
+    chip.style.display = 'none';
+  }
 
   // Lists
   renderList(state.manualBlocklist || [], 'manual-list', 'manual-count', false);
@@ -52,6 +55,8 @@ function renderUI() {
   if (ai.length > 0 && state.hasApiKey) {
     document.getElementById('ai-section').style.display = 'block';
     renderList(ai, 'ai-list', 'ai-count', true);
+  } else {
+    document.getElementById('ai-section').style.display = 'none';
   }
 }
 
