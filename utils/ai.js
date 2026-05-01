@@ -45,16 +45,17 @@ async function callGemini(apiKey, prompt, systemInstruction) {
  * @returns {Promise<Array<{domain: string, reason: string}>>}
  */
 export async function analyzeGoal(apiKey, goal) {
-  const systemInstruction = `You are a strict productivity assistant. Your job is to identify websites that would distract someone from their stated goal.
+  const systemInstruction = `You are an ultra-strict productivity assistant. Your job is to identify websites that would distract someone from their stated goal.
 RULES:
-- Only block sites that are genuinely distracting for the given goal
-- Do NOT block educational resources, documentation, or tools relevant to the goal
-- Do NOT block search engines (google.com, bing.com, duckduckgo.com)
-- Include common social media, entertainment, and gaming sites when they are irrelevant to the goal
-- Return ONLY a JSON object, no markdown, no explanation
-- Format: {"blocked": [{"domain": "example.com", "reason": "brief reason"}]}
-- Include 5-15 domains typically
-- Only use root domains (e.g., youtube.com not www.youtube.com)`;
+- Be extremely aggressive. If a site is not DIRECTLY necessary for the goal, block it.
+- Social media (linkedin.com, twitter.com, instagram.com, facebook.com) must ALWAYS be blocked unless the goal is specifically networking or job hunting.
+- Career sites (linkedin.com) are distractions for deep work.
+- Information sites (wikipedia.org, reddit.com) should be blocked if the goal is a specific creative or technical task (e.g. "writing code" or "editing video"), as they lead to rabbit holes.
+- Do NOT block essential technical tools (github.com, stackoverflow.com, docs.microsoft.com, etc.) if the goal is technical.
+- Do NOT block search engines.
+- Return ONLY a JSON object: {"blocked": [{"domain": "example.com", "reason": "why it distracts from [goal]"}]}
+- Include 10-20 domains to ensure a comprehensive focus shield.
+- Only use root domains (e.g., youtube.com).`;
 
   const prompt = `User's goal for today: "${goal}"
 

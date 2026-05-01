@@ -58,7 +58,8 @@ function removeHide() {
 }
 
 function matchesDomain(hostname, blockedDomain) {
-  const h = hostname.toLowerCase().replace(/^www\./, '');
-  const b = blockedDomain.toLowerCase().replace(/^www\./, '');
-  return h === b || h.endsWith('.' + b);
+  const h = hostname.toLowerCase().replace(/^www\./, '').split('.')[0];
+  const b = blockedDomain.toLowerCase().replace(/^www\./, '').split('.')[0];
+  // If the core names match (e.g. "linkedin" === "linkedin"), it's a block
+  return h === b;
 }

@@ -110,7 +110,27 @@ async function handleMessage(msg, sender) {
       let aiError = null;
       if (apiKey) {
         try {
-          aiBlocklist = await analyzeGoal(apiKey, msg.goal);
+          const aiResults = await analyzeGoal(apiKey, msg.goal);
+          // Hardcoded safety net for common distractions
+          const safetyNet = [
+            { domain: 'linkedin.com', reason: 'Common social distraction' },
+            { domain: 'youtube.com', reason: 'Entertainment distraction' },
+            { domain: 'reddit.com', reason: 'Information rabbit hole' },
+            { domain: 'twitter.com', reason: 'Social media distraction' },
+            { domain: 'instagram.com', reason: 'Social media distraction' },
+            { domain: 'facebook.com', reason: 'Social media distraction' },
+            { domain: 'wikipedia.org', reason: 'Information rabbit hole' }
+          ];
+          
+          // Merge and deduplicate
+          const merged = [...aiResults];
+          safetyNet.forEach(s => {
+            if (!merged.find(m => m.domain.includes(s.domain.split('.')[0]))) {
+              merged.push(s);
+            }
+          });
+
+          aiBlocklist = merged;
           await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: aiBlocklist });
         } catch (err) {
           aiError = err.message;

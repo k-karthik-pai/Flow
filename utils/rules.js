@@ -13,20 +13,17 @@ function escapeRegexDomain(domain) {
 }
 
 function getDomainRegex(domain) {
-  // Extract base domain name (e.g. "wikipedia" from "wikipedia.com")
-  // We look for the last part of the domain to determine what to strip
-  const parts = domain.split('.');
-  let baseName = domain;
+  // Clean domain and handle subdomains
+  const cleaned = domain.toLowerCase().replace(/^www\./, '');
+  const parts = cleaned.split('.');
   
-  if (parts.length >= 2) {
-    // If it's something like wikipedia.com or google.co.uk
-    // We'll take the first part as the base name if it's a simple domain
-    // or use a more robust way to match "wikipedia" regardless of .com/.org
-    baseName = parts[0];
-  }
-
+  // Extract the core name (e.g. "linkedin" from "www.linkedin.com")
+  // We take the first part of the cleaned domain.
+  const baseName = parts[0];
   const escaped = baseName.replace(/\./g, '\\.').replace(/-/g, '\\-');
-  // This regex matches: (any subdomains) + baseName + . (any TLD)
+  
+  // Matches (subdomain.) + baseName + .(any TLD)
+  // This ensures linkedin.com blocks linkedin.org, linkedin.in, etc.
   return `^https?://([a-z0-9\\-]+\\.)*${escaped}\\.[a-z]{2,}(/.*)?$`;
 }
 
