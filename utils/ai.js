@@ -1,41 +1,96 @@
 // utils/ai.js — Gemini AI Integration for Flow
 
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = 'gemini-pro';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
+// Define compatible model/endpoint combinations based on user's rate limits
+const COMPATIBLE_COMBINATIONS = [
+  // User has access to these models (from rate limits)
+  { model: 'gemini-2.5-flash', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-3-flash', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-3.1-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  // Try v1 endpoints as well
+  { model: 'gemini-2.5-flash', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
+  { model: 'gemini-3-flash', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
+  { model: 'gemini-3.1-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
+];
+
 async function callGemini(apiKey, prompt, systemInstruction) {
-  const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  console.log('[Flow] callGemini called with API key:', apiKey ? apiKey.substring(0, 10) + '...' : 'null');
+  
+  if (!apiKey) {
+    throw new Error('No API key provided');
+  }
+  
+  if (!apiKey.startsWith('AIza')) {
+    throw new Error('Invalid API key format - Gemini keys start with "AIza"');
+  }
+
+  // Combine system instruction and prompt for maximum compatibility
+  const fullPrompt = `${systemInstruction}\n\nUser Request: ${prompt}`;
+
   const body = {
-    system_instruction: {
-      parts: [{ text: systemInstruction }],
-    },
-    contents: [{ parts: [{ text: prompt }] }],
+    contents: [{ parts: [{ text: fullPrompt }] }],
     generationConfig: {
-      response_mime_type: 'application/json',
       temperature: 0.2,
+      maxOutputTokens: 1024,
     },
   };
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let lastError = null;
+  
+  console.log('[Flow] Trying compatible combinations:', COMPATIBLE_COMBINATIONS.length);
+  
+  // Try only compatible model/endpoint combinations
+  for (const combo of COMPATIBLE_COMBINATIONS) {
+    try {
+      const { model, endpoint } = combo;
+      const url = `${endpoint}/${model}:generateContent?key=${apiKey}`;
+      console.log(`[Flow] Trying: ${model} at ${endpoint.split('/')[3]}`);
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `Gemini API error: ${res.status}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}` } }));
+        lastError = new Error(err?.error?.message || `Gemini API error: ${res.status}`);
+        console.warn(`[Flow] Failed with ${model}:`, lastError.message);
+        continue; // Try next combination
+      }
+
+      const data = await res.json();
+      let text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!text) {
+        lastError = new Error('Empty response from Gemini');
+        console.warn(`[Flow] Empty response with ${model}`);
+        continue;
+      }
+
+      // Clean up the response
+      text = text.replace(/```json\n?/, '').replace(/```\n?$/, '').trim();
+      console.log(`[Flow] ✅ Success with ${model}:`, text.substring(0, 100));
+
+      try {
+        return JSON.parse(text);
+      } catch (parseErr) {
+        console.error('[Flow] JSON Parse error on text:', text);
+        lastError = new Error('Failed to parse Gemini JSON response');
+        continue;
+      }
+    } catch (err) {
+      lastError = err;
+      console.warn(`[Flow] Network error:`, err.message);
+      continue;
+    }
   }
-
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Empty response from Gemini');
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error('Failed to parse Gemini JSON response');
-  }
+  
+  // If we get here, all attempts failed
+  console.error('[Flow] ❌ All API combinations failed');
+  throw lastError || new Error('All Gemini API endpoints failed');
 }
 
 /**

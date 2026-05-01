@@ -110,29 +110,12 @@ async function handleMessage(msg, sender) {
       let aiError = null;
       if (apiKey) {
         try {
-          const aiResults = await analyzeGoal(apiKey, msg.goal);
-          // Hardcoded safety net for common distractions
-          const safetyNet = [
-            { domain: 'linkedin.com', reason: 'Common social distraction' },
-            { domain: 'youtube.com', reason: 'Entertainment distraction' },
-            { domain: 'reddit.com', reason: 'Information rabbit hole' },
-            { domain: 'twitter.com', reason: 'Social media distraction' },
-            { domain: 'instagram.com', reason: 'Social media distraction' },
-            { domain: 'facebook.com', reason: 'Social media distraction' },
-            { domain: 'wikipedia.org', reason: 'Information rabbit hole' }
-          ];
-          
-          // Merge and deduplicate
-          const merged = [...aiResults];
-          safetyNet.forEach(s => {
-            if (!merged.find(m => m.domain.includes(s.domain.split('.')[0]))) {
-              merged.push(s);
-            }
-          });
-
-          aiBlocklist = merged;
+          console.log('[Flow] Analyzing goal with AI:', msg.goal);
+          aiBlocklist = await analyzeGoal(apiKey, msg.goal);
+          console.log('[Flow] AI analysis result:', aiBlocklist);
           await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: aiBlocklist });
         } catch (err) {
+          console.error('[Flow] AI analysis failed:', err);
           aiError = err.message;
         }
       }
@@ -148,13 +131,20 @@ async function handleMessage(msg, sender) {
       if (!apiKey) return { error: 'No API key configured.' };
       if (!goal) return { error: 'No goal set for today.' };
       if (appealsInfo.remaining <= 0) return { error: 'Daily appeal limit reached (15/day).' };
-      const verdict = await judgeAppeal(apiKey, goal.text, domain, reason);
-      if (verdict.allow) {
-        sessionAllowed.push(domain);
-        await syncRules();
+      try {
+        console.log('[Flow] Judging appeal for:', domain, 'Reason:', reason);
+        const verdict = await judgeAppeal(apiKey, goal.text, domain, reason);
+        console.log('[Flow] Appeal verdict:', verdict);
+        if (verdict.allow) {
+          sessionAllowed.push(domain);
+          await syncRules();
+        }
+        await recordAppeal(domain, reason, verdict.reasoning, verdict.allow);
+        return { ...verdict, remaining: appealsInfo.remaining - 1 };
+      } catch (err) {
+        console.error('[Flow] Appeal judgment failed:', err);
+        return { error: err.message };
       }
-      await recordAppeal(domain, reason, verdict.reasoning, verdict.allow);
-      return { ...verdict, remaining: appealsInfo.remaining - 1 };
     }
 
     case 'SET_BLOCKING': {
