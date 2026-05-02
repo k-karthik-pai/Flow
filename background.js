@@ -5,12 +5,20 @@ import {
   incrementBlockedStat, resetDailyData, setStorage, getStorage,
   STORAGE_KEYS, getTodayString,
 } from './utils/storage.js';
-import { analyzeGoal, judgeAppeal } from './utils/ai.js';
+import { analyzeGoal, judgeAppeal, evaluateDomainDynamically } from './utils/ai.js';
 import { updateAllRules, clearAllRules } from './utils/rules.js';
 
 // ─── Session-level state ─────────────────────────────────────────────────────
 let sessionAllowed = [];
 let goalTabOpened = false; // prevent opening goal tab more than once per session
+let evaluatedDomains = {}; // Cache for dynamic AI blocking
+
+// Essential domains that should never be evaluated or blocked dynamically
+const ESSENTIAL_DOMAINS = [
+  'google.com', 'google.co.in', 'google.co.uk',
+  'bing.com', 'duckduckgo.com', 'yahoo.com',
+  'localhost', '127.0.0.1'
+];
 
 // ─── Initialization ──────────────────────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(async () => {
@@ -55,6 +63,7 @@ async function checkMidnightReset() {
   if (goal && goal.date !== getTodayString()) {
     await resetDailyData();
     sessionAllowed = [];
+    evaluatedDomains = {};
     await clearAllRules();
     // Re-apply manual blocklist (always active)
     await syncRules();
@@ -66,6 +75,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'midnightReset') {
     await resetDailyData();
     sessionAllowed = [];
+    evaluatedDomains = {};
     goalTabOpened = false;
     await clearAllRules();
     await syncRules(); // re-apply manual blocklist
@@ -105,6 +115,7 @@ async function handleMessage(msg, sender) {
     case 'SET_GOAL': {
       const goal = await setGoal(msg.goal);
       sessionAllowed = [];
+      evaluatedDomains = {};
       const apiKey = await getApiKey();
       let aiBlocklist = [];
       let aiError = null;
@@ -124,7 +135,7 @@ async function handleMessage(msg, sender) {
     }
 
     case 'SUBMIT_APPEAL': {
-      const { domain, reason } = msg;
+      const { domain, url, reason } = msg;
       const goal = await getGoal();
       const apiKey = await getApiKey();
       const appealsInfo = await getAppealsInfo();
@@ -136,7 +147,7 @@ async function handleMessage(msg, sender) {
         const verdict = await judgeAppeal(apiKey, goal.text, domain, reason);
         console.log('[Flow] Appeal verdict:', verdict);
         if (verdict.allow) {
-          sessionAllowed.push(domain);
+          sessionAllowed.push(url || `https://${domain}`);
           await syncRules();
         }
         await recordAppeal(domain, reason, verdict.reasoning, verdict.allow);
@@ -210,3 +221,56 @@ async function handleMessage(msg, sender) {
       return { error: `Unknown message type: ${msg.type}` };
   }
 }
+
+// ─── Dynamic AI Evaluation ───────────────────────────────────────────────────
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete' || !tab.url) return;
+  if (!tab.url.startsWith('http')) return;
+
+  const enabled = await isBlockingEnabled();
+  if (!enabled) return;
+
+  const [apiKey, goal, manual, ai, whitelist] = await Promise.all([
+    getApiKey(), getGoal(), getManualBlocklist(), getAIBlocklist(), getWhitelist()
+  ]);
+
+  if (!apiKey || !goal) return;
+
+  try {
+    const urlObj = new URL(tab.url);
+    const domain = urlObj.hostname.replace(/^www\./, '');
+    
+    // Check caches and lists
+    if (ESSENTIAL_DOMAINS.includes(domain)) return;
+    if (evaluatedDomains[tab.url]) return;
+    if (whitelist.some(d => domain.includes(d) || d.includes(domain))) return;
+    if (manual.some(d => domain.includes(d) || d.includes(domain))) return;
+    if (ai.some(e => {
+      const b = typeof e === 'string' ? e : e.domain;
+      return domain.includes(b) || b.includes(domain);
+    })) return;
+    if (sessionAllowed.some(allowedUrl => tab.url.startsWith(allowedUrl))) return;
+
+    // Mark as evaluating to prevent duplicate calls
+    evaluatedDomains[tab.url] = true;
+    
+    // Ask Gemini
+    const isDistracting = await evaluateDomainDynamically(apiKey, goal.text, domain, tab.url, tab.title);
+    
+    if (isDistracting) {
+      console.log(`[Flow] Dynamically blocked: ${domain}`);
+      const updatedAiList = [...ai, { domain, reason: 'Dynamically flagged by AI based on your goal.' }];
+      await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: updatedAiList });
+      await syncRules();
+      
+      // Redirect the current tab
+      chrome.tabs.update(tabId, {
+        url: chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}&url=${encodeURIComponent(tab.url)}`)
+      });
+    } else {
+      console.log(`[Flow] Dynamically allowed: ${domain}`);
+    }
+  } catch (err) {
+    console.error('[Flow] Dynamic evaluation failed:', err);
+  }
+});

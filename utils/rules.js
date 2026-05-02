@@ -27,18 +27,16 @@ function getDomainRegex(domain) {
   return `^https?://([a-z0-9\\-]+\\.)*${escaped}\\.[a-z]{2,}(/.*)?$`;
 }
 
-function getRedirectUrl(domain) {
-  const base = chrome.runtime.getURL(BLOCKED_PAGE_PATH);
-  return `${base}?site=${encodeURIComponent(domain)}`;
-}
-
 function makeBlockRule(domain, ruleId) {
+  const base = chrome.runtime.getURL(BLOCKED_PAGE_PATH);
+  // \\0 represents the entire matched URL in the regexSubstitution
+  const regexSub = `${base}?site=${encodeURIComponent(domain)}&url=\\0`;
   return {
     id: ruleId,
     priority: 1,
     action: {
       type: 'redirect',
-      redirect: { url: getRedirectUrl(domain) },
+      redirect: { regexSubstitution: regexSub },
     },
     condition: {
       regexFilter: getDomainRegex(domain),
@@ -59,13 +57,13 @@ function makeWhitelistRule(domain, ruleId) {
   };
 }
 
-function makeSessionAllowRule(domain, ruleId) {
+function makeSessionAllowRule(url, ruleId) {
   return {
     id: ruleId,
     priority: 10,
     action: { type: 'allow' },
     condition: {
-      regexFilter: getDomainRegex(domain),
+      urlFilter: url,
       resourceTypes: ['main_frame'],
     },
   };
@@ -99,8 +97,8 @@ export async function updateAllRules(
   });
 
   // Session-allowed rules (also high priority)
-  sessionAllowed.forEach((domain, i) => {
-    newRules.push(makeSessionAllowRule(domain, SESSION_ALLOW_ID_START + i));
+  sessionAllowed.forEach((url, i) => {
+    newRules.push(makeSessionAllowRule(url, SESSION_ALLOW_ID_START + i));
   });
 
   // Manual block rules

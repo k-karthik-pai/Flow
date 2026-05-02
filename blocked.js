@@ -2,6 +2,7 @@
 
 const params = new URLSearchParams(window.location.search);
 const blockedDomain = params.get('site') || 'this site';
+const blockedUrl = params.get('url') || `https://${blockedDomain}`;
 
 document.getElementById('block-domain').textContent = blockedDomain;
 
@@ -74,6 +75,7 @@ document.getElementById('btn-appeal').addEventListener('click', async () => {
     const result = await chrome.runtime.sendMessage({
       type: 'SUBMIT_APPEAL',
       domain: blockedDomain,
+      url: blockedUrl,
       reason,
     });
 
@@ -87,8 +89,7 @@ document.getElementById('btn-appeal').addEventListener('click', async () => {
         `${appealsRemaining} appeal${appealsRemaining !== 1 ? 's' : ''} left today`;
       // Redirect after 2s
       setTimeout(() => {
-        const original = `https://${blockedDomain}`;
-        window.location.replace(original);
+        window.location.replace(blockedUrl);
       }, 2000);
     } else {
       showVerdict(false, '❌ Access Denied', result.reasoning);
@@ -121,6 +122,15 @@ function showVerdict(allow, title, reason) {
   document.getElementById('verdict-reason').textContent = reason;
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+// ─── Back Button ──────────────────────────────────────────────────────────────
+document.getElementById('btn-back').addEventListener('click', () => {
+  if (history.length > 1 && document.referrer) {
+    history.back();
+  } else {
+    window.location.replace('https://www.google.com/');
+  }
+});
 
 // ─── Settings Link ────────────────────────────────────────────────────────────
 const settingsBtn = document.getElementById('btn-settings');

@@ -12,7 +12,6 @@ const COMPATIBLE_COMBINATIONS = [
   // Try v1 endpoints as well
   { model: 'gemini-2.5-flash', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
   { model: 'gemini-3-flash', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
-  { model: 'gemini-3.1-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
 ];
 
 async function callGemini(apiKey, prompt, systemInstruction) {
@@ -33,7 +32,7 @@ async function callGemini(apiKey, prompt, systemInstruction) {
     contents: [{ parts: [{ text: fullPrompt }] }],
     generationConfig: {
       temperature: 0.2,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 4096,
     },
   };
 
@@ -148,4 +147,38 @@ Should this site be temporarily unblocked for this session?`;
     allow: Boolean(result?.allow),
     reasoning: result?.reasoning || 'No reasoning provided.',
   };
+}
+
+/**
+ * Dynamically judges if a newly visited domain is a distraction from the goal.
+ * @param {string} apiKey - Gemini API key
+ * @param {string} goal - User's daily goal
+ * @param {string} domain - The domain being visited
+ * @param {string} url - The full URL being visited
+ * @param {string} title - The page title
+ * @returns {Promise<boolean>} true if distracting, false if safe
+ */
+export async function evaluateDomainDynamically(apiKey, goal, domain, url, title) {
+  const systemInstruction = `You are an ultra-strict productivity assistant.
+RULES:
+- A user is working on this goal: "${goal}".
+- They just visited this page:
+  Domain: "${domain}"
+  URL: "${url}"
+  Title: "${title || 'Unknown'}"
+- Is this specific page a DISTRACTION that should be blocked?
+- Answer ONLY with a JSON object: {"distracting": true} or {"distracting": false}
+- Social media, news, sports, entertainment are distracting.
+- General sites (like wikipedia.org or youtube.com) MUST be blocked if the specific URL/Title is not DIRECTLY related to the goal.
+- Essential work tools, search engines, or sites directly related to the goal are not.`;
+
+  const prompt = `Goal: "${goal}"\nPage: ${url} (${title})\nIs this distracting?`;
+
+  try {
+    const result = await callGemini(apiKey, prompt, systemInstruction);
+    return Boolean(result?.distracting);
+  } catch (err) {
+    console.warn('[Flow] Dynamic AI evaluation failed:', err);
+    return false; // Fail open to avoid blocking legitimate work on error
+  }
 }

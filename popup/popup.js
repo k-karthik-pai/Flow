@@ -15,7 +15,10 @@ function renderUI() {
   if (!state) return;
 
   // Goal
-  if (state.goal) {
+  if (!state.hasApiKey) {
+    document.getElementById('section-set-goal').style.display = 'none';
+    document.getElementById('section-active-goal').style.display = 'none';
+  } else if (state.goal) {
     document.getElementById('section-set-goal').style.display = 'none';
     document.getElementById('section-active-goal').style.display = 'flex';
     document.getElementById('active-goal-text').textContent = state.goal.text;
@@ -37,8 +40,8 @@ function renderUI() {
     dot.className = 'status-dot off';
     text.textContent = 'Blocking off';
   } else {
-    dot.className = 'status-dot' + (state.goal ? ' on' : ' off');
-    text.textContent = state.goal ? 'Blocking active' : 'Waiting for goal';
+    dot.className = 'status-dot' + (state.hasApiKey && !state.goal ? ' off' : ' on');
+    text.textContent = !state.hasApiKey ? 'Manual blocking active' : (state.goal ? 'Blocking active' : 'Waiting for goal');
   }
 
   const total = (state.manualBlocklist?.length || 0) + (state.aiBlocklist?.length || 0);

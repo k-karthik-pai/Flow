@@ -34,13 +34,13 @@
     const sessionAllowed = response.sessionAllowed || [];
 
     const isWhitelisted = whitelist.some((d) => matchesDomain(hostname, d));
-    const isSessionAllowed = sessionAllowed.some((d) => matchesDomain(hostname, d));
+    const isSessionAllowed = sessionAllowed.some((allowedUrl) => window.location.href.startsWith(allowedUrl));
     const isBlocked = allBlocked.some((d) => matchesDomain(hostname, d));
 
     if (isBlocked && !isWhitelisted && !isSessionAllowed) {
       // Record stat and redirect to blocked page
       chrome.runtime.sendMessage({ type: 'RECORD_BLOCK', domain: hostname });
-      const blockedUrl = chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(hostname)}`);
+      const blockedUrl = chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(hostname)}&url=${encodeURIComponent(window.location.href)}`);
       window.location.replace(blockedUrl);
       return;
     }
