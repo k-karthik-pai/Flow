@@ -5,13 +5,15 @@ const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 // Define compatible model/endpoint combinations based on user's rate limits
 const COMPATIBLE_COMBINATIONS = [
-  // User has access to these models (from rate limits)
+  // User has access to these models (from rate limits). Highest limits first.
+  { model: 'gemini-3.1-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemma-4-31b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemma-4-26b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemma-3-27b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemma-3-12b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
   { model: 'gemini-2.5-flash', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
   { model: 'gemini-3-flash', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemini-3.1-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  // Try v1 endpoints as well
-  { model: 'gemini-2.5-flash', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
-  { model: 'gemini-3-flash', endpoint: 'https://generativelanguage.googleapis.com/v1/models' },
+  { model: 'gemini-2.5-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
 ];
 
 async function callGemini(apiKey, prompt, systemInstruction) {
@@ -102,6 +104,7 @@ export async function analyzeGoal(apiKey, goal) {
   const systemInstruction = `You are an ultra-strict productivity assistant. Your job is to identify websites that would distract someone from their stated goal.
 RULES:
 - Be extremely aggressive. If a site is not DIRECTLY necessary for the goal, block it.
+- IF THE USER EXPLICITLY MENTIONS A WEBSITE OR TOOL IN THEIR GOAL (e.g. "using github", "on wikipedia"), DO NOT BLOCK IT. IT IS ESSENTIAL.
 - Social media (linkedin.com, twitter.com, instagram.com, facebook.com) must ALWAYS be blocked unless the goal is specifically networking or job hunting.
 - Career sites (linkedin.com) are distractions for deep work.
 - Information sites (wikipedia.org, reddit.com) should be blocked if the goal is a specific creative or technical task (e.g. "writing code" or "editing video"), as they lead to rabbit holes.
@@ -168,6 +171,7 @@ RULES:
   Title: "${title || 'Unknown'}"
 - Is this specific page a DISTRACTION that should be blocked?
 - Answer ONLY with a JSON object: {"distracting": true} or {"distracting": false}
+- IF THE USER EXPLICITLY MENTIONED THIS WEBSITE OR DOMAIN IN THEIR GOAL, IT IS NEVER A DISTRACTION. Output {"distracting": false}.
 - Social media, news, sports, entertainment are distracting.
 - General sites (like wikipedia.org or youtube.com) MUST be blocked if the specific URL/Title is not DIRECTLY related to the goal.
 - Essential work tools, search engines, or sites directly related to the goal are not.`;
