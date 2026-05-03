@@ -1,5 +1,12 @@
 // options.js — Flow Settings
 
+function escapeHTML(str) {
+  if (!str) return '';
+  return str.replace(/[&<>'"]/g, tag => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[tag]));
+}
+
 let state = null;
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
@@ -157,8 +164,8 @@ function renderSL(items, listId, badgeId, onRemove, isAI) {
     const li = document.createElement('li');
     li.className = 'slist-item';
     li.innerHTML = `
-      <span class="slist-name">${domain}</span>
-      ${reason ? `<span class="slist-reason" title="${reason}">${reason}</span>` : ''}
+      <span class="slist-name">${escapeHTML(domain)}</span>
+      ${reason ? `<span class="slist-reason" title="${escapeHTML(reason)}">${escapeHTML(reason)}</span>` : ''}
       ${onRemove ? `<button class="slist-remove"><svg viewBox="0 0 12 12" fill="none"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
     `;
     if (onRemove) li.querySelector('.slist-remove').addEventListener('click', () => onRemove(domain));
@@ -212,14 +219,14 @@ function loadAppealsTab() {
     div.className = 'appeal-item';
     div.innerHTML = `
       <div class="appeal-row1">
-        <span class="appeal-domain">${a.domain}</span>
+        <span class="appeal-domain">${escapeHTML(a.domain)}</span>
         <span class="badge ${a.allowed ? 'badge-ok' : ''}" style="${!a.allowed ? 'background:var(--danger-t);color:var(--danger)' : ''}">${a.allowed ? 'Allowed' : 'Denied'}</span>
         <span class="appeal-date">${date}</span>
       </div>
       <div class="appeal-label">Your reason</div>
-      <div class="appeal-text">${a.userReason}</div>
+      <div class="appeal-text">${escapeHTML(a.userReason)}</div>
       <div class="appeal-label ai">AI verdict</div>
-      <div class="appeal-text">${a.aiVerdict}</div>
+      <div class="appeal-text">${escapeHTML(a.aiVerdict)}</div>
     `;
     list.appendChild(div);
   });

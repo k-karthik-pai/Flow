@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Flow — Settings</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../utils/tokens.css" />
   <link rel="stylesheet" href="options.css" />
   <script src="../utils/theme.js"></script>
 </head>
@@ -41,6 +42,10 @@
         <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
         Appearance
       </button>
+      <button class="sb-link" data-tab="tips">
+        <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M8 14.5l-6-6a4 4 0 0 1 6-5.5 4 4 0 0 1 6 5.5l-6 6z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Support Me
+      </button>
     </div>
   </nav>
 
@@ -52,7 +57,7 @@
       <p class="page-desc">Your Gemini key is stored locally and never sent to any third-party server.</p>
       <div class="card">
         <div class="card-hd">
-          <div><div class="card-title">Gemini API Key</div><div class="card-sub">gemini-1.5-flash</div></div>
+          <div><div class="card-title">Gemini API Key</div></div>
           <span class="badge" id="api-status-badge">Not set</span>
         </div>
         <div class="card-body">
@@ -151,6 +156,20 @@
               </div>
             </label>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Support Me -->
+    <section class="panel" id="tab-tips">
+      <h1 class="page-title">Support Me</h1>
+      <p class="page-desc">If Flow helps you focus, consider leaving a tip!</p>
+      <div class="card">
+        <div class="card-body" style="text-align: center; padding: 40px 16px;">
+          <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style="margin-bottom: 16px; color: var(--danger)"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
+          <h2 style="margin-bottom: 8px; font-size: 18px; font-weight: 600;">Buy me a coffee</h2>
+          <p style="color: var(--t2); margin-bottom: 24px; font-size: 13px;">Your support helps fund the development and keeps the extension ad-free.</p>
+          <a href="#" target="_blank" class="btn btn-filled" style="text-decoration: none; padding: 10px 24px; font-size: 14px;">Leave a Tip</a>
         </div>
       </div>
     </section>

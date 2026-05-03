@@ -1,48 +1,6 @@
 /* popup.css — Flow · Google-style clean design with light/dark/system theme */
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* ── Theme tokens ─────────────────────────────────────────────────────────── */
-:root, html.light {
-  --bg:       #ffffff;
-  --surface:  #f8f9fa;
-  --surface2: #f1f3f4;
-  --border:   #dadce0;
-  --border-f: #1a73e8;
-  --t1:       #202124;
-  --t2:       #5f6368;
-  --t3:       #80868b;
-  --primary:  #1a73e8;
-  --primary-h:#1765cc;
-  --primary-t:rgba(26,115,232,0.08);
-  --success:  #188038;
-  --success-t:rgba(24,128,56,0.08);
-  --danger:   #d93025;
-  --danger-t: rgba(217,48,37,0.08);
-  --shadow:   0 1px 3px 0 rgba(60,64,67,0.15);
-  --shadow-l: 0 1px 2px 0 rgba(60,64,67,0.1);
-}
-
-html.dark {
-  --bg:       #1f1f1f;
-  --surface:  #292a2d;
-  --surface2: #35363a;
-  --border:   #3c4043;
-  --border-f: #8ab4f8;
-  --t1:       #e8eaed;
-  --t2:       #9aa0a6;
-  --t3:       #6e7479;
-  --primary:  #8ab4f8;
-  --primary-h:#aecbfa;
-  --primary-t:rgba(138,180,248,0.12);
-  --success:  #81c995;
-  --success-t:rgba(129,201,149,0.12);
-  --danger:   #f28b82;
-  --danger-t: rgba(242,139,130,0.12);
-  --shadow:   0 1px 3px 0 rgba(0,0,0,0.4);
-  --shadow-l: 0 1px 2px 0 rgba(0,0,0,0.3);
-}
 
 html, body {
   margin: 0;

@@ -17,7 +17,7 @@
   try {
     const hostname = window.location.hostname.replace(/^www\./, '');
     const response = await chrome.runtime.sendMessage({
-      type: 'GET_STATE',
+      type: 'CHECK_BLOCKED',
     });
 
     // Check if blocked
@@ -58,8 +58,7 @@ function removeHide() {
 }
 
 function matchesDomain(hostname, blockedDomain) {
-  const h = hostname.toLowerCase().replace(/^www\./, '').split('.')[0];
-  const b = blockedDomain.toLowerCase().replace(/^www\./, '').split('.')[0];
-  // If the core names match (e.g. "linkedin" === "linkedin"), it's a block
-  return h === b;
+  const h = hostname.toLowerCase().replace(/^www\./, '');
+  const b = blockedDomain.toLowerCase().replace(/^www\./, '');
+  return h === b || h.endsWith('.' + b);
 }

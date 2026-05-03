@@ -56,7 +56,7 @@ textarea.addEventListener('input', () => {
 });
 
 document.getElementById('btn-appeal').addEventListener('click', async () => {
-  const reason = textarea.value.trim();
+  const reason = textarea.value.trim().slice(0, 500);
   if (!reason) {
     textarea.focus();
     textarea.style.borderColor = 'rgba(239,68,68,0.5)';

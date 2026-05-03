@@ -113,7 +113,6 @@ export async function updateAllRules(
   });
 
   const newIds = newRules.map((r) => r.id);
-  const toRemove = existingIds.filter((id) => !newIds.includes(id));
 
   try {
     await chrome.declarativeNetRequest.updateDynamicRules({
@@ -139,9 +138,3 @@ export async function clearAllRules() {
   }
 }
 
-/**
- * Returns all currently active dynamic rules.
- */
-export async function getActiveRules() {
-  return chrome.declarativeNetRequest.getDynamicRules();
-}

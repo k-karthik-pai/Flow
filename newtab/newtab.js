@@ -4,7 +4,7 @@ function updateClock() {
   document.getElementById('clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 updateClock();
-setInterval(updateClock, 10000);
+setInterval(updateClock, 1000);
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -74,6 +74,9 @@ function setLoading(on) {
   document.getElementById('goal-spinner').style.display = on ? 'block' : 'none';
 }
 
-document.getElementById('btn-change-goal')?.addEventListener('click', showInput);
+document.getElementById('btn-change-goal')?.addEventListener('click', async () => {
+  await chrome.runtime.sendMessage({ type: 'SET_GOAL', goal: null });
+  showInput();
+});
 
 loadState();

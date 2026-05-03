@@ -6,10 +6,8 @@
   "permissions": [
     "storage",
     "declarativeNetRequest",
-    "declarativeNetRequestFeedback",
     "tabs",
-    "alarms",
-    "scripting"
+    "alarms"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -45,5 +43,8 @@
       "resources": ["blocked.html", "blocked.css", "blocked.js"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
 }

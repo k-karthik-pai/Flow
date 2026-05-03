@@ -132,6 +132,18 @@ export async function incrementBlockedStat(domain) {
   const today = getTodayString();
   const { stats } = await getStorage([STORAGE_KEYS.STATS]);
   const currentStats = stats || {};
+  
+  // Prune stats older than 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const cutoffDate = thirtyDaysAgo.toISOString().slice(0, 10);
+  
+  for (const date in currentStats) {
+    if (date < cutoffDate) {
+      delete currentStats[date];
+    }
+  }
+
   const todayStats = currentStats[today] || { blocked: 0, topDomains: {} };
 
   todayStats.blocked += 1;

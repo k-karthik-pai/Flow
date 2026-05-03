@@ -1,5 +1,12 @@
 // popup.js — Flow Extension Popup
 
+function escapeHTML(str) {
+  if (!str) return '';
+  return str.replace(/[&<>'"]/g, tag => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[tag]));
+}
+
 let state = null;
 
 async function loadState() {
@@ -81,8 +88,8 @@ function renderList(items, listId, countId, isAI) {
     li.className = `list-item${isAI ? ' ai' : ''}`;
     li.innerHTML = `
       <div class="list-dot"></div>
-      <span class="list-name">${domain}</span>
-      ${reason ? `<span class="list-reason" title="${reason}">${reason}</span>` : ''}
+      <span class="list-name">${escapeHTML(domain)}</span>
+      ${reason ? `<span class="list-reason" title="${escapeHTML(reason)}">${escapeHTML(reason)}</span>` : ''}
       ${!isAI ? `<button class="list-remove" data-idx="${idx}"><svg viewBox="0 0 12 12" fill="none"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>` : ''}
     `;
     list.appendChild(li);
@@ -124,7 +131,8 @@ function setGoalLoading(on) {
   document.getElementById('goal-spinner').style.display = on ? 'block' : 'none';
 }
 
-document.getElementById('btn-reset-goal').addEventListener('click', () => {
+document.getElementById('btn-reset-goal').addEventListener('click', async () => {
+  await chrome.runtime.sendMessage({ type: 'SET_GOAL', goal: null });
   document.getElementById('section-set-goal').style.display = 'block';
   document.getElementById('section-active-goal').style.display = 'none';
 });

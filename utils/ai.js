@@ -1,18 +1,10 @@
 // utils/ai.js — Gemini AI Integration for Flow
 
-const GEMINI_MODEL = 'gemini-pro';
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-// Define compatible model/endpoint combinations based on user's rate limits
 const COMPATIBLE_COMBINATIONS = [
   // User has access to these models (from rate limits). Highest limits first.
-  { model: 'gemini-3.1-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemma-4-31b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemma-4-26b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemma-3-27b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemma-3-12b', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-3.1-flash-lite-preview', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-3-flash-preview', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
   { model: 'gemini-2.5-flash', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemini-3-flash', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
   { model: 'gemini-2.5-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
 ];
 
@@ -44,48 +36,66 @@ async function callGemini(apiKey, prompt, systemInstruction) {
   
   // Try only compatible model/endpoint combinations
   for (const combo of COMPATIBLE_COMBINATIONS) {
-    try {
-      const { model, endpoint } = combo;
-      const url = `${endpoint}/${model}:generateContent?key=${apiKey}`;
-      console.log(`[Flow] Trying: ${model} at ${endpoint.split('/')[3]}`);
-      
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+    const { model, endpoint } = combo;
+    const url = `${endpoint}/${model}:generateContent?key=${apiKey}`;
+    let retries = 0;
+    const maxRetries = 2;
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}` } }));
-        lastError = new Error(err?.error?.message || `Gemini API error: ${res.status}`);
-        console.warn(`[Flow] Failed with ${model}:`, lastError.message);
-        continue; // Try next combination
-      }
-
-      const data = await res.json();
-      let text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      if (!text) {
-        lastError = new Error('Empty response from Gemini');
-        console.warn(`[Flow] Empty response with ${model}`);
-        continue;
-      }
-
-      // Clean up the response
-      text = text.replace(/```json\n?/, '').replace(/```\n?$/, '').trim();
-      console.log(`[Flow] ✅ Success with ${model}:`, text.substring(0, 100));
-
+    while (retries <= maxRetries) {
       try {
-        return JSON.parse(text);
-      } catch (parseErr) {
-        console.error('[Flow] JSON Parse error on text:', text);
-        lastError = new Error('Failed to parse Gemini JSON response');
-        continue;
+        console.log(`[Flow] Trying: ${model} at ${endpoint.split('/')[3]} (Attempt ${retries + 1})`);
+        
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: { message: `HTTP ${res.status}` } }));
+          const errorMessage = err?.error?.message || `Gemini API error: ${res.status}`;
+          lastError = new Error(errorMessage);
+          console.warn(`[Flow] Failed with ${model}:`, errorMessage);
+
+          if (res.status === 429 && retries < maxRetries) {
+            const match = errorMessage.match(/retry in ([\d.]+)s/);
+            const waitTime = match ? parseFloat(match[1]) * 1000 : 4000;
+            if (waitTime > 10000) {
+              console.log(`[Flow] Wait time too long (${waitTime}ms). Skipping retry.`);
+              break;
+            }
+            console.log(`[Flow] Rate limited (429). Waiting ${waitTime}ms before retry...`);
+            await new Promise(r => setTimeout(r, waitTime + 500)); // buffer
+            retries++;
+            continue;
+          }
+          break; // Break the while loop, try next combination
+        }
+
+        const data = await res.json();
+        let text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!text) {
+          lastError = new Error('Empty response from Gemini');
+          console.warn(`[Flow] Empty response with ${model}`);
+          break;
+        }
+
+        text = text.replace(/```json\n?/, '').replace(/```\n?$/, '').trim();
+        console.log(`[Flow] ✅ Success with ${model}:`, text.substring(0, 100));
+
+        try {
+          return JSON.parse(text);
+        } catch (parseErr) {
+          console.error('[Flow] JSON Parse error on text:', text);
+          lastError = new Error('Failed to parse Gemini JSON response');
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`[Flow] Network error:`, err.message);
+        break;
       }
-    } catch (err) {
-      lastError = err;
-      console.warn(`[Flow] Network error:`, err.message);
-      continue;
     }
   }
   

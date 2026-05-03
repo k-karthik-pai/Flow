@@ -1,17 +1,5 @@
 /* newtab.css — Flow goal page · Google-style */
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap');
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root, html.light {
-  --bg:#fff; --surface:#f8f9fa; --surface2:#f1f3f4; --border:#dadce0;
-  --t1:#202124; --t2:#5f6368; --t3:#80868b;
-  --primary:#1a73e8; --primary-h:#1765cc; --primary-t:rgba(26,115,232,0.08);
-}
-html.dark {
-  --bg:#1f1f1f; --surface:#292a2d; --surface2:#35363a; --border:#3c4043;
-  --t1:#e8eaed; --t2:#9aa0a6; --t3:#6e7479;
-  --primary:#8ab4f8; --primary-h:#aecbfa; --primary-t:rgba(138,180,248,0.12);
-}
 
 body {
   font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--t1);

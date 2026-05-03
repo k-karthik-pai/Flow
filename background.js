@@ -86,18 +86,24 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 // ─── Rule Sync ───────────────────────────────────────────────────────────────
+let isSyncing = false;
+let syncQueue = Promise.resolve();
+
 async function syncRules() {
-  const enabled = await isBlockingEnabled();
-  if (!enabled) {
-    await clearAllRules();
-    return;
-  }
-  const [manual, ai, whitelist] = await Promise.all([
-    getManualBlocklist(),
-    getAIBlocklist(),
-    getWhitelist(),
-  ]);
-  await updateAllRules(manual, ai, whitelist, sessionAllowed);
+  syncQueue = syncQueue.then(async () => {
+    const enabled = await isBlockingEnabled();
+    if (!enabled) {
+      await clearAllRules();
+      return;
+    }
+    const [manual, ai, whitelist] = await Promise.all([
+      getManualBlocklist(),
+      getAIBlocklist(),
+      getWhitelist(),
+    ]);
+    await updateAllRules(manual, ai, whitelist, sessionAllowed);
+  }).catch((err) => console.error('[Flow] Sync rules error:', err));
+  return syncQueue;
 }
 
 // ─── Message Handler ─────────────────────────────────────────────────────────
@@ -116,22 +122,30 @@ async function handleMessage(msg, sender) {
       const goal = await setGoal(msg.goal);
       sessionAllowed = [];
       evaluatedDomains = {};
-      const apiKey = await getApiKey();
-      let aiBlocklist = [];
-      let aiError = null;
-      if (apiKey) {
-        try {
-          console.log('[Flow] Analyzing goal with AI:', msg.goal);
-          aiBlocklist = await analyzeGoal(apiKey, msg.goal);
-          console.log('[Flow] AI analysis result:', aiBlocklist);
-          await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: aiBlocklist });
-        } catch (err) {
-          console.error('[Flow] AI analysis failed:', err);
-          aiError = err.message;
-        }
+      
+      if (!msg.goal) {
+        await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: [] });
+        await syncRules();
+        return { success: true, goal: null };
       }
+      
+      // Run AI analysis asynchronously so the UI transitions immediately
+      getApiKey().then(async (apiKey) => {
+        if (apiKey) {
+          try {
+            console.log('[Flow] Analyzing goal with AI asynchronously:', msg.goal);
+            const aiBlocklist = await analyzeGoal(apiKey, msg.goal);
+            console.log('[Flow] AI analysis result:', aiBlocklist);
+            await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: aiBlocklist });
+            await syncRules();
+          } catch (err) {
+            console.error('[Flow] AI analysis failed:', err);
+          }
+        }
+      });
+
       await syncRules();
-      return { success: true, goal, aiBlocklist, aiError };
+      return { success: true, goal };
     }
 
     case 'SUBMIT_APPEAL': {
@@ -148,6 +162,7 @@ async function handleMessage(msg, sender) {
         console.log('[Flow] Appeal verdict:', verdict);
         if (verdict.allow) {
           sessionAllowed.push(url || `https://${domain}`);
+          if (sessionAllowed.length > 500) sessionAllowed.shift();
           await syncRules();
         }
         await recordAppeal(domain, reason, verdict.reasoning, verdict.allow);
@@ -212,6 +227,22 @@ async function handleMessage(msg, sender) {
       };
     }
 
+    case 'CHECK_BLOCKED': {
+      const [enabled, manual, ai, whitelist] = await Promise.all([
+        isBlockingEnabled(),
+        getManualBlocklist(),
+        getAIBlocklist(),
+        getWhitelist(),
+      ]);
+      return {
+        blockingEnabled: enabled,
+        manualBlocklist: manual,
+        aiBlocklist: ai,
+        whitelist,
+        sessionAllowed,
+      };
+    }
+
     case 'RECORD_BLOCK': {
       await incrementBlockedStat(msg.domain);
       return { success: true };
@@ -253,6 +284,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
     // Mark as evaluating to prevent duplicate calls
     evaluatedDomains[tab.url] = true;
+    const keys = Object.keys(evaluatedDomains);
+    if (keys.length > 500) delete evaluatedDomains[keys[0]];
     
     // Ask Gemini
     const isDistracting = await evaluateDomainDynamically(apiKey, goal.text, domain, tab.url, tab.title);
