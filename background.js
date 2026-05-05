@@ -11,6 +11,7 @@ import { updateAllRules, clearAllRules } from './utils/rules.js';
 // ─── Session-level state ─────────────────────────────────────────────────────
 let sessionAllowed = [];
 let goalTabOpened = false; // prevent opening goal tab more than once per session
+let sessionLater = false; // user clicked "Later" to skip goal setting
 let evaluatedDomains = {}; // Cache for dynamic AI blocking
 
 // Essential domains that should never be evaluated or blocked dynamically
@@ -63,6 +64,7 @@ async function checkMidnightReset() {
   if (goal && goal.date !== getTodayString()) {
     await resetDailyData();
     sessionAllowed = [];
+    sessionLater = false;
     evaluatedDomains = {};
     await clearAllRules();
     // Re-apply manual blocklist (always active)
@@ -75,6 +77,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'midnightReset') {
     await resetDailyData();
     sessionAllowed = [];
+    sessionLater = false;
     evaluatedDomains = {};
     goalTabOpened = false;
     await clearAllRules();
@@ -228,11 +231,13 @@ async function handleMessage(msg, sender) {
     }
 
     case 'CHECK_BLOCKED': {
-      const [enabled, manual, ai, whitelist] = await Promise.all([
+      const [enabled, manual, ai, whitelist, apiKey, goal] = await Promise.all([
         isBlockingEnabled(),
         getManualBlocklist(),
         getAIBlocklist(),
         getWhitelist(),
+        getApiKey(),
+        getGoal(),
       ]);
       return {
         blockingEnabled: enabled,
@@ -240,7 +245,13 @@ async function handleMessage(msg, sender) {
         aiBlocklist: ai,
         whitelist,
         sessionAllowed,
+        needsGoal: Boolean(apiKey) && !goal && !sessionLater,
       };
+    }
+
+    case 'SAY_LATER': {
+      sessionLater = true;
+      return { success: true };
     }
 
     case 'RECORD_BLOCK': {

@@ -20,6 +20,12 @@
       type: 'CHECK_BLOCKED',
     });
 
+    if (response?.needsGoal) {
+      const newtabUrl = chrome.runtime.getURL(`newtab/newtab.html?returnUrl=${encodeURIComponent(window.location.href)}`);
+      window.location.replace(newtabUrl);
+      return;
+    }
+
     // Check if blocked
     if (!response || !response.blockingEnabled) {
       removeHide();

@@ -79,4 +79,20 @@ document.getElementById('btn-change-goal')?.addEventListener('click', async () =
   showInput();
 });
 
+document.getElementById('btn-later')?.addEventListener('click', async () => {
+  await chrome.runtime.sendMessage({ type: 'SAY_LATER' });
+  const params = new URLSearchParams(window.location.search);
+  const returnUrl = params.get('returnUrl');
+  if (returnUrl) {
+    window.location.replace(returnUrl);
+  } else {
+    document.getElementById('goal-input-section').style.display = 'none';
+    document.getElementById('goal-active-section').style.display = '';
+    document.getElementById('active-goal-text').textContent = 'Goal postponed for today. You can set it anytime from the extension popup.';
+    document.querySelector('.stats-row').style.display = 'none';
+    document.getElementById('btn-change-goal').style.display = 'none';
+    document.querySelector('.active-label').style.display = 'none';
+  }
+});
+
 loadState();

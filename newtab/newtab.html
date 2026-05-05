@@ -28,10 +28,13 @@
         <textarea id="goal-input" class="textarea" placeholder="e.g., Finish the ML assignment and review chapter 5…" maxlength="300" rows="3" autofocus></textarea>
         <div class="input-footer">
           <span class="char-hint" id="char-hint">0/300</span>
-          <button class="btn btn-filled" id="btn-set-goal">
-            <span id="goal-btn-text">Start focusing</span>
-            <div class="spinner" id="goal-spinner" style="display:none"></div>
-          </button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" id="btn-later" style="padding:10px 16px;">Later</button>
+            <button class="btn btn-filled" id="btn-set-goal">
+              <span id="goal-btn-text">Start focusing</span>
+              <div class="spinner" id="goal-spinner" style="display:none"></div>
+            </button>
+          </div>
         </div>
       </div>
       <div class="msg msg-err" id="goal-error" style="display:none"></div>
