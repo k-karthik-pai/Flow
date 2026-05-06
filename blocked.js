@@ -1,8 +1,20 @@
 // blocked.js — Flow Blocked Page Logic
 
 const params = new URLSearchParams(window.location.search);
-const blockedDomain = params.get('site') || 'this site';
-const blockedUrl = params.get('url') || `https://${blockedDomain}`;
+let blockedDomain = sessionStorage.getItem('blockedDomain');
+let blockedUrl = sessionStorage.getItem('blockedUrl');
+
+if (params.has('site')) {
+  blockedDomain = params.get('site');
+  blockedUrl = params.get('url') || `https://${blockedDomain}`;
+  sessionStorage.setItem('blockedDomain', blockedDomain);
+  sessionStorage.setItem('blockedUrl', blockedUrl);
+  // Clean the URL so it doesn't look weird or jump around in the address bar
+  history.replaceState(null, '', '/blocked.html');
+} else if (!blockedDomain) {
+  blockedDomain = 'this site';
+  blockedUrl = `https://${blockedDomain}`;
+}
 
 document.getElementById('block-domain').textContent = blockedDomain;
 
