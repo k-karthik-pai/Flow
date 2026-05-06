@@ -40,7 +40,11 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["blocked.html", "blocked.css", "blocked.js"],
+      "resources": [
+        "blocked.html", "blocked.css", "blocked.js",
+        "newtab/newtab.html", "newtab/newtab.css", "newtab/newtab.js",
+        "utils/tokens.css", "utils/theme.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ],
