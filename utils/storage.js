@@ -164,5 +164,6 @@ export async function resetDailyData() {
     [STORAGE_KEYS.APPEALS_TODAY]: 0,
     [STORAGE_KEYS.APPEALS_RESET_DATE]: getTodayString(),
     [STORAGE_KEYS.PAUSE_UNTIL]: null,
+    [STORAGE_KEYS.APPEALS]: [],
   });
 }
