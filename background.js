@@ -9,10 +9,19 @@ import { analyzeGoal, judgeAppeal, evaluateDomainDynamically } from './utils/ai.
 import { updateAllRules, clearAllRules } from './utils/rules.js';
 
 // ─── Session-level state ─────────────────────────────────────────────────────
-let sessionAllowed = [];
-let goalTabOpened = false; // prevent opening goal tab more than once per session
-let sessionLater = false; // user clicked "Later" to skip goal setting
-let evaluatedDomains = {}; // Cache for dynamic AI blocking
+// Service workers go to sleep, so we must persist session state in chrome.storage.session
+async function getSessionState() {
+  const res = await chrome.storage.session.get(['sessionAllowed', 'goalTabOpened', 'evaluatedDomains']);
+  return {
+    sessionAllowed: res.sessionAllowed || [],
+    goalTabOpened: res.goalTabOpened || false,
+    evaluatedDomains: res.evaluatedDomains || {}
+  };
+}
+
+async function updateSessionState(updates) {
+  await chrome.storage.session.set(updates);
+}
 
 // Essential domains that should never be evaluated or blocked dynamically
 const ESSENTIAL_DOMAINS = [
@@ -37,12 +46,13 @@ chrome.runtime.onStartup.addListener(async () => {
 
 // ─── Open goal tab only for API key users with no goal today ─────────────────
 async function maybeOpenGoalTab() {
-  if (goalTabOpened) return;
+  const state = await getSessionState();
+  if (state.goalTabOpened) return;
   const apiKey = await getApiKey();
   if (!apiKey) return; // no API key → don't bother user at all
   const goal = await getGoal();
   if (goal) return; // already set today
-  goalTabOpened = true;
+  await updateSessionState({ goalTabOpened: true });
   const url = chrome.runtime.getURL('newtab/newtab.html');
   chrome.tabs.create({ url, active: true });
 }
@@ -63,9 +73,7 @@ async function checkMidnightReset() {
   const { goal } = await getStorage([STORAGE_KEYS.GOAL]);
   if (goal && goal.date !== getTodayString()) {
     await resetDailyData();
-    sessionAllowed = [];
-    sessionLater = false;
-    evaluatedDomains = {};
+    await updateSessionState({ sessionAllowed: [], evaluatedDomains: {} });
     await clearAllRules();
     // Re-apply manual blocklist (always active)
     await syncRules();
@@ -76,10 +84,7 @@ async function checkMidnightReset() {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'midnightReset') {
     await resetDailyData();
-    sessionAllowed = [];
-    sessionLater = false;
-    evaluatedDomains = {};
-    goalTabOpened = false;
+    await updateSessionState({ sessionAllowed: [], evaluatedDomains: {}, goalTabOpened: false });
     await clearAllRules();
     await syncRules(); // re-apply manual blocklist
   } else if (alarm.name === 'pauseEnd') {
@@ -104,6 +109,7 @@ async function syncRules() {
       getAIBlocklist(),
       getWhitelist(),
     ]);
+    const { sessionAllowed } = await getSessionState();
     await updateAllRules(manual, ai, whitelist, sessionAllowed);
   }).catch((err) => console.error('[Flow] Sync rules error:', err));
   return syncQueue;
@@ -123,8 +129,7 @@ async function handleMessage(msg, sender) {
 
     case 'SET_GOAL': {
       const goal = await setGoal(msg.goal);
-      sessionAllowed = [];
-      evaluatedDomains = {};
+      await updateSessionState({ sessionAllowed: [], evaluatedDomains: {} });
       
       if (!msg.goal) {
         await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: [] });
@@ -164,8 +169,11 @@ async function handleMessage(msg, sender) {
         const verdict = await judgeAppeal(apiKey, goal.text, domain, reason);
         console.log('[Flow] Appeal verdict:', verdict);
         if (verdict.allow) {
+          const state = await getSessionState();
+          const sessionAllowed = state.sessionAllowed;
           sessionAllowed.push(url || `https://${domain}`);
           if (sessionAllowed.length > 500) sessionAllowed.shift();
+          await updateSessionState({ sessionAllowed });
           await syncRules();
         }
         await recordAppeal(domain, reason, verdict.reasoning, verdict.allow);
@@ -204,7 +212,7 @@ async function handleMessage(msg, sender) {
     }
 
     case 'GET_STATE': {
-      const [goal, manual, ai, whitelist, apiKey, enabled, appealsInfo, pause, stats] =
+      const [goal, manual, ai, whitelist, apiKey, enabled, appealsInfo, pause, stats, state] =
         await Promise.all([
           getGoal(),
           getManualBlocklist(),
@@ -215,6 +223,7 @@ async function handleMessage(msg, sender) {
           getAppealsInfo(),
           getStorage([STORAGE_KEYS.PAUSE_UNTIL]),
           getStorage([STORAGE_KEYS.STATS]),
+          getSessionState(),
         ]);
       return {
         goal,
@@ -225,33 +234,28 @@ async function handleMessage(msg, sender) {
         blockingEnabled: enabled,
         pauseUntil: pause.pauseUntil || null,
         appealsInfo,
-        sessionAllowed,
+        sessionAllowed: state.sessionAllowed,
         stats: stats.stats || {},
       };
     }
 
     case 'CHECK_BLOCKED': {
-      const [enabled, manual, ai, whitelist, apiKey, goal] = await Promise.all([
+      const [enabled, manual, ai, whitelist, apiKey, goal, state] = await Promise.all([
         isBlockingEnabled(),
         getManualBlocklist(),
         getAIBlocklist(),
         getWhitelist(),
         getApiKey(),
         getGoal(),
+        getSessionState(),
       ]);
       return {
         blockingEnabled: enabled,
         manualBlocklist: manual,
         aiBlocklist: ai,
         whitelist,
-        sessionAllowed,
-        needsGoal: Boolean(apiKey) && !goal && !sessionLater,
+        sessionAllowed: state.sessionAllowed,
       };
-    }
-
-    case 'SAY_LATER': {
-      sessionLater = true;
-      return { success: true };
     }
 
     case 'RECORD_BLOCK': {
@@ -282,6 +286,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     const urlObj = new URL(tab.url);
     const domain = urlObj.hostname.replace(/^www\./, '');
     
+    const state = await getSessionState();
+    const evaluatedDomains = state.evaluatedDomains;
+    const sessionAllowed = state.sessionAllowed;
+
     // Check caches and lists
     if (ESSENTIAL_DOMAINS.includes(domain)) return;
     if (evaluatedDomains[tab.url]) return;
@@ -297,6 +305,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     evaluatedDomains[tab.url] = true;
     const keys = Object.keys(evaluatedDomains);
     if (keys.length > 500) delete evaluatedDomains[keys[0]];
+    await updateSessionState({ evaluatedDomains });
     
     // Ask Gemini
     const isDistracting = await evaluateDomainDynamically(apiKey, goal.text, domain, tab.url, tab.title);
