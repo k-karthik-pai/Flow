@@ -20,7 +20,7 @@ Flow is a strict, AI-powered productivity extension for Chrome (Manifest V3) des
 
 ### 3. AI Engine (Gemini)
 - **File**: `utils/ai.js`
-- **Model**: Fallback chain starting with `gemini-3.1-flash-lite-preview` (v1beta).
+- **Model**: Fallback chain starting with `gemini-3.1-flash-lite` (v1beta), with fallbacks to `gemini-2.5-flash-lite`, `gemini-3.5-flash`, `gemini-3-flash`, and `gemini-2.5-flash`.
 - **Strategy**: Utilizes newer, lightweight models to ensure fast latency and generous free-tier rate limits (500 requests/day). Uses a "Simplified Payload" approach where system instructions are merged into the main prompt.
 
 ### 4. UI & Theme System

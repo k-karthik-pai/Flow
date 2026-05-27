@@ -39,4 +39,4 @@ Flow is not currently published on the Chrome Web Store and must be loaded as an
 
 ## Architecture & Permissions
 
-Flow is built on Manifest V3. It leverages the `declarativeNetRequest` API for performant, synchronous blocking before a page even renders, preventing visual flashes of distracting content. The extension utilizes a fallback chain of lightweight Gemini models (e.g., `gemini-3.1-flash-lite-preview`) to minimize latency and manage API rate limits efficiently.
+Flow is built on Manifest V3. It leverages the `declarativeNetRequest` API for performant, synchronous blocking before a page even renders, preventing visual flashes of distracting content. The extension utilizes a fallback chain of lightweight Gemini models (starting with `gemini-3.1-flash-lite`) to minimize latency and manage API rate limits efficiently.

@@ -1,11 +1,12 @@
 // utils/ai.js — Gemini AI Integration for Flow
 
 const COMPATIBLE_COMBINATIONS = [
-  // User has access to these models (from rate limits). Highest limits first.
+  // Sorted by free-tier limits (highest RPD/RPM first)
   { model: 'gemini-3.1-flash-lite-preview', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemini-3-flash-preview', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemini-2.5-flash', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
-  { model: 'gemini-2.5-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-3.5-flash',              endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-3-flash-preview',        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-2.5-flash',              endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  { model: 'gemini-2.5-flash-lite',         endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
 ];
 
 async function callGemini(apiKey, prompt, systemInstruction) {
