@@ -112,17 +112,14 @@ async function callGemini(apiKey, prompt, systemInstruction) {
  * @returns {Promise<Array<{domain: string, reason: string}>>}
  */
 export async function analyzeGoal(apiKey, goal) {
-  const systemInstruction = `You are an ultra-strict productivity assistant. Your job is to identify websites that would distract someone from their stated goal.
+  const systemInstruction = `You are a helpful productivity assistant. Your job is to identify websites that would distract someone from their stated goal.
 RULES:
-- Be extremely aggressive. If a site is not DIRECTLY necessary for the goal, block it.
-- IF THE USER EXPLICITLY MENTIONS A WEBSITE OR TOOL IN THEIR GOAL (e.g. "using github", "on wikipedia"), DO NOT BLOCK IT. IT IS ESSENTIAL.
-- Social media (linkedin.com, twitter.com, instagram.com, facebook.com) must ALWAYS be blocked unless the goal is specifically networking or job hunting.
-- Career sites (linkedin.com) are distractions for deep work.
-- Information sites (wikipedia.org, reddit.com) should be blocked if the goal is a specific creative or technical task (e.g. "writing code" or "editing video"), as they lead to rabbit holes.
-- Do NOT block essential technical tools (github.com, stackoverflow.com, docs.microsoft.com, etc.) if the goal is technical.
-- Do NOT block search engines.
+- Be reasonable. Block clear distractions (social media, streaming, gaming, news, shopping), but DO NOT block tools or materials that are useful for the user's goal.
+- Evaluate context: A site might be productive for one goal but distracting for another.
+- IF THE USER EXPLICITLY MENTIONS A WEBSITE OR TOOL IN THEIR GOAL, DO NOT BLOCK IT.
+- Social media must ALWAYS be blocked unless the goal is specifically networking or job hunting.
 - Return ONLY a JSON object: {"blocked": [{"domain": "example.com", "reason": "why it distracts from [goal]"}]}
-- Include 10-20 domains to ensure a comprehensive focus shield.
+- Include 5-15 domains to ensure a comprehensive focus shield.
 - Only use root domains (e.g., youtube.com).`;
 
   const prompt = `User's goal for today: "${goal}"
@@ -173,7 +170,7 @@ Should this site be temporarily unblocked for this session?`;
  * @returns {Promise<boolean>} true if distracting, false if safe
  */
 export async function evaluateDomainDynamically(apiKey, goal, domain, url, title) {
-  const systemInstruction = `You are an ultra-strict productivity assistant.
+  const systemInstruction = `You are a helpful productivity assistant.
 RULES:
 - A user is working on this goal: "${goal}".
 - They just visited this page:
@@ -182,10 +179,10 @@ RULES:
   Title: "${title || 'Unknown'}"
 - Is this specific page a DISTRACTION that should be blocked?
 - Answer ONLY with a JSON object: {"distracting": true} or {"distracting": false}
+- Evaluate dynamically: Determine if the specific content on this URL/Title directly helps the user achieve their goal.
 - IF THE USER EXPLICITLY MENTIONED THIS WEBSITE OR DOMAIN IN THEIR GOAL, IT IS NEVER A DISTRACTION. Output {"distracting": false}.
-- Social media, news, sports, entertainment are distracting.
-- General sites (like wikipedia.org or youtube.com) MUST be blocked if the specific URL/Title is not DIRECTLY related to the goal.
-- Essential work tools, search engines, or sites directly related to the goal are not.`;
+- General sites (like youtube.com or reddit.com) should be blocked if the specific URL/Title is clearly entertaining and not related to the goal, but allowed if it appears educational or relevant.
+- Do not make assumptions about generic tools (like chatbots or wikis). If they could be used to accomplish the goal, allow them.`;
 
   const prompt = `Goal: "${goal}"\nPage: ${url} (${title})\nIs this distracting?`;
 

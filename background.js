@@ -292,7 +292,14 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
     // Check caches and lists
     if (ESSENTIAL_DOMAINS.includes(domain)) return;
-    if (evaluatedDomains[tab.url]) return;
+    
+    const cached = evaluatedDomains[tab.url];
+    if (cached === 'evaluating' || cached === 'allowed') return;
+    if (cached === 'blocked') {
+      chrome.tabs.update(tabId, { url: chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}&url=${encodeURIComponent(tab.url)}`) });
+      return;
+    }
+
     if (whitelist.some(d => domain.includes(d) || d.includes(domain))) return;
     if (manual.some(d => domain.includes(d) || d.includes(domain))) return;
     if (ai.some(e => {
@@ -302,7 +309,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (sessionAllowed.some(allowedUrl => tab.url.startsWith(allowedUrl))) return;
 
     // Mark as evaluating to prevent duplicate calls
-    evaluatedDomains[tab.url] = true;
+    evaluatedDomains[tab.url] = 'evaluating';
     const keys = Object.keys(evaluatedDomains);
     if (keys.length > 500) delete evaluatedDomains[keys[0]];
     await updateSessionState({ evaluatedDomains });
@@ -310,18 +317,17 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     // Ask Gemini
     const isDistracting = await evaluateDomainDynamically(apiKey, goal.text, domain, tab.url, tab.title);
     
+    evaluatedDomains[tab.url] = isDistracting ? 'blocked' : 'allowed';
+    await updateSessionState({ evaluatedDomains });
+    
     if (isDistracting) {
-      console.log(`[Flow] Dynamically blocked: ${domain}`);
-      const updatedAiList = [...ai, { domain, reason: 'Dynamically flagged by AI based on your goal.' }];
-      await setStorage({ [STORAGE_KEYS.AI_BLOCKLIST]: updatedAiList });
-      await syncRules();
-      
+      console.log(`[Flow] Dynamically blocked: ${tab.url}`);
       // Redirect the current tab
       chrome.tabs.update(tabId, {
         url: chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}&url=${encodeURIComponent(tab.url)}`)
       });
     } else {
-      console.log(`[Flow] Dynamically allowed: ${domain}`);
+      console.log(`[Flow] Dynamically allowed: ${tab.url}`);
     }
   } catch (err) {
     console.error('[Flow] Dynamic evaluation failed:', err);
