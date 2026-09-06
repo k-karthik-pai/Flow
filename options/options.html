@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Flow — Settings</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../utils/tokens.css" />
   <link rel="stylesheet" href="options.css" />
   <script src="../utils/theme.js"></script>
@@ -50,7 +49,7 @@
     <!-- API Key -->
     <section class="panel active" id="tab-api">
       <h1 class="page-title">API Key</h1>
-      <p class="page-desc">Your Gemini key is stored locally and never sent to any third-party server.</p>
+      <p class="page-desc">AI is optional. Saving a key enables sending your goal, visited page domains, URL paths and titles, and submitted appeals to Google Gemini. Your key is stored locally and sent only to Google for authentication. Query strings and fragments are excluded.</p>
       <div class="card">
         <div class="card-hd">
           <div><div class="card-title">Gemini API Key</div></div>
@@ -63,7 +62,7 @@
               <input type="password" class="input" id="api-key-input" placeholder="AIzaSy..." autocomplete="off" spellcheck="false" />
               <button class="btn btn-outline btn-sm" id="btn-toggle-key">Show</button>
             </div>
-            <p class="field-hint">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></p>
+            <p class="field-hint">Get a key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></p>
           </div>
           <div class="btn-row">
             <button class="btn btn-filled" id="btn-save-key">Save key</button>
@@ -172,6 +171,6 @@
 
   </main>
 </div>
-<script src="options.js"></script>
+<script type="module" src="options.js"></script>
 </body>
 </html>

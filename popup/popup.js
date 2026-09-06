@@ -1,8 +1,11 @@
+import { saveSiteList } from '../utils/messages.js';
+import '../utils/domains.js';
+import { localDate } from '../utils/date.js';
 // popup.js — Flow Extension Popup
 
 function escapeHTML(str) {
   if (!str) return '';
-  return str.replace(/[&<>'"]/g, tag => ({
+  return String(str).replace(/[&<>'"]/g, tag => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[tag]));
 }
@@ -119,7 +122,8 @@ async function submitGoal() {
   setGoalLoading(true);
   document.getElementById('goal-error').style.display = 'none';
   try {
-    await chrome.runtime.sendMessage({ type: 'SET_GOAL', goal: text });
+    const result = await chrome.runtime.sendMessage({ type: 'SET_GOAL', goal: text });
+    if (result.error) throw new Error(result.error);
     state = await chrome.runtime.sendMessage({ type: 'GET_STATE' });
     renderUI();
   } catch (err) {
@@ -150,24 +154,25 @@ document.getElementById('site-input').addEventListener('keydown', (e) => {
 
 async function addSite() {
   const input = document.getElementById('site-input');
-  let d = input.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
-  if (!d) return;
+  let d = FlowDomains.normalizeDomain(input.value.trim());
+  if (!d) { input.setCustomValidity('Enter a valid domain or HTTP(S) URL.'); input.reportValidity(); return; }
+  input.setCustomValidity('');
   const current = state?.manualBlocklist || [];
   if (current.includes(d)) { input.value = ''; return; }
   const updated = [...current, d];
-  await chrome.storage.local.set({ manualBlocklist: updated });
-  await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
+  if (updated.length > 300) { alert('A maximum of 300 sites per list is supported.'); return; }
+  await saveSiteList('manualBlocklist', updated);
   input.value = '';
   state.manualBlocklist = updated;
-  renderList(updated, 'manual-list', 'manual-count', false);
+  renderUI();
 }
 
 async function removeSite(idx) {
   const updated = (state?.manualBlocklist || []).filter((_, i) => i !== idx);
-  await chrome.storage.local.set({ manualBlocklist: updated });
-  await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
+  if (updated.length > 300) { alert('A maximum of 300 sites per list is supported.'); return; }
+  await saveSiteList('manualBlocklist', updated);
   state.manualBlocklist = updated;
-  renderList(updated, 'manual-list', 'manual-count', false);
+  renderUI();
 }
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────

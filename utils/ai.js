@@ -1,8 +1,9 @@
+import './domains.js';
 // utils/ai.js — Gemini AI Integration for Flow
 
 const COMPATIBLE_COMBINATIONS = [
-  // Sorted by free-tier limits (highest RPD/RPM first)
-  { model: 'gemini-3.1-flash-lite-preview', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
+  // Stable default, followed by compatible fallbacks. Quotas depend on the account.
+  { model: 'gemini-3.1-flash-lite', endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
   { model: 'gemini-3.5-flash',              endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
   { model: 'gemini-3-flash-preview',        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
   { model: 'gemini-2.5-flash',              endpoint: 'https://generativelanguage.googleapis.com/v1beta/models' },
@@ -10,8 +11,6 @@ const COMPATIBLE_COMBINATIONS = [
 ];
 
 async function callGemini(apiKey, prompt, systemInstruction) {
-  console.log('[Flow] callGemini called with API key:', apiKey ? apiKey.substring(0, 10) + '...' : 'null');
-  
   if (!apiKey) {
     throw new Error('No API key provided');
   }
@@ -20,35 +19,40 @@ async function callGemini(apiKey, prompt, systemInstruction) {
     throw new Error('Invalid API key format - Gemini keys start with "AIza"');
   }
 
-  // Combine system instruction and prompt for maximum compatibility
-  const fullPrompt = `${systemInstruction}\n\nUser Request: ${prompt}`;
-
+  // Keep instructions separate from user/page data.
   const body = {
-    contents: [{ parts: [{ text: fullPrompt }] }],
+    systemInstruction: { parts: [{ text: systemInstruction }] },
+    contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: 0.2,
+      responseMimeType: 'application/json',
       maxOutputTokens: 4096,
     },
   };
 
   let lastError = null;
+  const deadline = Date.now() + 24000;
   
   console.log('[Flow] Trying compatible combinations:', COMPATIBLE_COMBINATIONS.length);
   
   // Try only compatible model/endpoint combinations
   for (const combo of COMPATIBLE_COMBINATIONS) {
     const { model, endpoint } = combo;
-    const url = `${endpoint}/${model}:generateContent?key=${apiKey}`;
+    const url = `${endpoint}/${model}:generateContent`;
     let retries = 0;
     const maxRetries = 2;
 
     while (retries <= maxRetries) {
+      if (Date.now() >= deadline) throw lastError || new Error('Gemini request timed out.');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), Math.max(1, Math.min(8000, deadline - Date.now())));
       try {
         console.log(`[Flow] Trying: ${model} at ${endpoint.split('/')[3]} (Attempt ${retries + 1})`);
         
         const res = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          signal: controller.signal,
           body: JSON.stringify(body),
         });
 
@@ -61,7 +65,7 @@ async function callGemini(apiKey, prompt, systemInstruction) {
           if (res.status === 429 && retries < maxRetries) {
             const match = errorMessage.match(/retry in ([\d.]+)s/);
             const waitTime = match ? parseFloat(match[1]) * 1000 : 4000;
-            if (waitTime > 10000) {
+            if (waitTime > 10000 || Date.now() + waitTime + 500 >= deadline) {
               console.log(`[Flow] Wait time too long (${waitTime}ms). Skipping retry.`);
               break;
             }
@@ -83,12 +87,11 @@ async function callGemini(apiKey, prompt, systemInstruction) {
         }
 
         text = text.replace(/```json\n?/, '').replace(/```\n?$/, '').trim();
-        console.log(`[Flow] ✅ Success with ${model}:`, text.substring(0, 100));
 
         try {
           return JSON.parse(text);
         } catch (parseErr) {
-          console.error('[Flow] JSON Parse error on text:', text);
+
           lastError = new Error('Failed to parse Gemini JSON response');
           break;
         }
@@ -96,6 +99,8 @@ async function callGemini(apiKey, prompt, systemInstruction) {
         lastError = err;
         console.warn(`[Flow] Network error:`, err.message);
         break;
+      } finally {
+        clearTimeout(timeout);
       }
     }
   }
@@ -127,7 +132,11 @@ RULES:
 Based on this goal, which websites should be blocked to keep the user focused? Think about what would distract them specifically.`;
 
   const result = await callGemini(apiKey, prompt, systemInstruction);
-  return result?.blocked || [];
+  if (!Array.isArray(result?.blocked)) throw new Error('Invalid AI blocklist response.');
+  return result.blocked.slice(0, 30).flatMap(entry => {
+    const domain = FlowDomains.normalizeDomain(entry?.domain);
+    return domain && typeof entry.reason === 'string' ? [{ domain, reason: entry.reason.slice(0, 500) }] : [];
+  });
 }
 
 /**
@@ -154,9 +163,10 @@ User's reason for needing access: "${reason}"
 Should this site be temporarily unblocked for this session?`;
 
   const result = await callGemini(apiKey, prompt, systemInstruction);
+  if (typeof result?.allow !== 'boolean') throw new Error('Invalid AI appeal response.');
   return {
-    allow: Boolean(result?.allow),
-    reasoning: result?.reasoning || 'No reasoning provided.',
+    allow: result.allow,
+    reasoning: typeof result.reasoning === 'string' ? result.reasoning.slice(0, 1000) : 'No reasoning provided.',
   };
 }
 
@@ -170,6 +180,9 @@ Should this site be temporarily unblocked for this session?`;
  * @returns {Promise<boolean>} true if distracting, false if safe
  */
 export async function evaluateDomainDynamically(apiKey, goal, domain, url, title) {
+  const page = new URL(url);
+  page.username = ''; page.password = ''; page.search = ''; page.hash = '';
+  url = page.href;
   const systemInstruction = `You are a helpful productivity assistant.
 RULES:
 - A user is working on this goal: "${goal}".
@@ -188,7 +201,8 @@ RULES:
 
   try {
     const result = await callGemini(apiKey, prompt, systemInstruction);
-    return Boolean(result?.distracting);
+    if (typeof result?.distracting !== 'boolean') throw new Error('Invalid AI evaluation response.');
+    return result.distracting;
   } catch (err) {
     console.warn('[Flow] Dynamic AI evaluation failed:', err);
     return false; // Fail open to avoid blocking legitimate work on error

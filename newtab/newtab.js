@@ -1,3 +1,5 @@
+import '../utils/domains.js';
+import { localDate } from '../utils/date.js';
 // newtab.js — Flow Goal Page (opened programmatically for API key users)
 
 function updateClock() {
@@ -37,7 +39,7 @@ function showActive(state) {
   document.getElementById('goal-input-section').style.display = 'none';
   document.getElementById('goal-active-section').style.display = '';
   document.getElementById('active-goal-text').textContent = state.goal.text;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDate();
   const todayStats = state.stats?.[today] || {};
   document.getElementById('stat-blocked').textContent = todayStats.blocked || 0;
   document.getElementById('stat-appeals').textContent = state.appealsInfo?.remaining ?? '—';
@@ -58,7 +60,8 @@ async function submitGoal() {
   setLoading(true);
   document.getElementById('goal-error').style.display = 'none';
   try {
-    await chrome.runtime.sendMessage({ type: 'SET_GOAL', goal: text });
+    const result = await chrome.runtime.sendMessage({ type: 'SET_GOAL', goal: text });
+    if (result.error) throw new Error(result.error);
     loadState();
   } catch (err) {
     document.getElementById('goal-error').textContent = err.message;

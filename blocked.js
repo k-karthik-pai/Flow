@@ -6,7 +6,19 @@ let blockedUrl = sessionStorage.getItem('blockedUrl');
 
 if (params.has('site')) {
   blockedDomain = params.get('site');
-  blockedUrl = params.get('url') || `https://${blockedDomain}`;
+  // DNR substitutions cannot URL-encode the original URL. Read its raw tail,
+  // preserving query parameters, plus signs, percent escapes and fragments.
+  const rawIndex = window.location.search.indexOf('&raw=');
+  blockedUrl = rawIndex >= 0
+    ? window.location.search.slice(rawIndex + 5) + window.location.hash
+    : params.get('url') || `https://${blockedDomain}`;
+  try {
+    const target = new URL(blockedUrl);
+    if (!['http:', 'https:'].includes(target.protocol)) throw new Error('Invalid URL');
+    blockedDomain = target.hostname.replace(/^www\./, '');
+    blockedUrl = target.href;
+  } catch { blockedDomain = 'this site'; blockedUrl = 'https://www.google.com/'; }
+  chrome.runtime.sendMessage({ type: 'RECORD_BLOCK', domain: blockedDomain }).catch(() => {});
   sessionStorage.setItem('blockedDomain', blockedDomain);
   sessionStorage.setItem('blockedUrl', blockedUrl);
   // Clean the URL so it doesn't look weird or jump around in the address bar

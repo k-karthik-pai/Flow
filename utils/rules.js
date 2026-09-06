@@ -1,3 +1,4 @@
+import './domains.js';
 // utils/rules.js — declarativeNetRequest Dynamic Rule Management
 
 // Rule ID ranges
@@ -8,29 +9,17 @@ const SESSION_ALLOW_ID_START = 40000; // Temporarily allowed after appeal
 
 const BLOCKED_PAGE_PATH = '/blocked.html';
 
-function escapeRegexDomain(domain) {
-  return domain.replace(/\./g, '\\.').replace(/-/g, '\\-');
-}
-
 function getDomainRegex(domain) {
-  // Clean domain and handle subdomains
-  const cleaned = domain.toLowerCase().replace(/^www\./, '');
-  const parts = cleaned.split('.');
-  
-  // Extract the core name (e.g. "linkedin" from "www.linkedin.com")
-  // We take the first part of the cleaned domain.
-  const baseName = parts[0];
-  const escaped = baseName.replace(/\./g, '\\.').replace(/-/g, '\\-');
-  
-  // Matches (subdomain.) + baseName + .(any TLD)
-  // This ensures linkedin.com blocks linkedin.org, linkedin.in, etc.
-  return `^https?://([a-z0-9\\-]+\\.)*${escaped}\\.[a-z]{2,}(/.*)?$`;
+  const cleaned = FlowDomains.normalizeDomain(domain);
+  if (!cleaned) throw new Error('Invalid domain in site list.');
+  const escaped = cleaned.replace(/\./g, '\\.');
+  return `^https?://([a-z0-9-]+\\.)*${escaped}\\.?(:[0-9]+)?(/.*)?$`;
 }
 
 function makeBlockRule(domain, ruleId) {
   const base = chrome.runtime.getURL(BLOCKED_PAGE_PATH);
   // \\0 represents the entire matched URL in the regexSubstitution
-  const regexSub = `${base}?site=${encodeURIComponent(domain)}&url=\\0`;
+  const regexSub = `${base}?site=${encodeURIComponent(domain)}&raw=\\0`;
   return {
     id: ruleId,
     priority: 1,
@@ -40,6 +29,7 @@ function makeBlockRule(domain, ruleId) {
     },
     condition: {
       regexFilter: getDomainRegex(domain),
+      isUrlFilterCaseSensitive: false,
       resourceTypes: ['main_frame'],
     },
   };
@@ -52,6 +42,7 @@ function makeWhitelistRule(domain, ruleId) {
     action: { type: 'allow' },
     condition: {
       regexFilter: getDomainRegex(domain),
+      isUrlFilterCaseSensitive: false,
       resourceTypes: ['main_frame'],
     },
   };
@@ -60,11 +51,7 @@ function makeWhitelistRule(domain, ruleId) {
 const ESSENTIAL_ALLOW_ID_START = 50000;
 const WHITELIST_ONLY_BLOCK_ID = 60000;
 
-const ESSENTIAL_DOMAINS = [
-  'google.com', 'google.co.in', 'google.co.uk',
-  'bing.com', 'duckduckgo.com', 'yahoo.com',
-  'localhost', '127.0.0.1'
-];
+const ESSENTIAL_DOMAINS = FlowDomains.essentialDomains;
 
 function makeSessionAllowRule(item, ruleId) {
   let domain = item;
@@ -80,7 +67,7 @@ function makeSessionAllowRule(item, ruleId) {
 
 function makeCatchAllBlockRule(ruleId) {
   const base = chrome.runtime.getURL(BLOCKED_PAGE_PATH);
-  const regexSub = `${base}?site=non-whitelisted&url=\\0`;
+  const regexSub = `${base}?site=non-whitelisted&raw=\\0`;
   return {
     id: ruleId,
     priority: 2,
@@ -110,6 +97,12 @@ export async function updateAllRules(
   sessionAllowed = [],
   whitelistOnlyMode = false
 ) {
+  // Ignore malformed legacy/AI entries so one bad value cannot disable all rules.
+  const domains = entries => [...new Set(entries.map(d => FlowDomains.normalizeDomain(d)).filter(Boolean))];
+  manualBlocklist = domains(manualBlocklist);
+  whitelist = domains(whitelist);
+  sessionAllowed = domains(sessionAllowed);
+  aiBlocklist = domains(aiBlocklist.map(e => typeof e === 'string' ? e : e?.domain));
   const existingIds = await getAllExistingRuleIds();
 
   const newRules = [];
@@ -143,7 +136,7 @@ export async function updateAllRules(
     });
   }
 
-  const newIds = newRules.map((r) => r.id);
+
 
   try {
     await chrome.declarativeNetRequest.updateDynamicRules({

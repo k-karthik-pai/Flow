@@ -1,42 +1,75 @@
 # Flow
 
-Flow is an intent-driven productivity extension for Google Chrome. Rather than relying on static, easily bypassed blocklists, Flow utilizes local AI integration to evaluate your browsing behavior in real-time against a specific daily focus goal.
+A Chrome extension that blocks distractions using your site lists and an optional
+Gemini-powered daily focus goal.
 
-If a site distracts from your current objective, Flow blocks it. If you have a legitimate reason to access a blocked site, you can submit a written appeal to the AI for temporary access.
+**[Install Flow from the Chrome Web Store](https://chromewebstore.google.com/detail/flow/gmeloppnbmbeogmaiemeoflnlpgfefeh)**
 
-## Core Features
+## Everyday use
 
-* **Intent-Based Filtering:** Set a specific goal (e.g., "Researching linear algebra" or "Writing frontend React code"). Flow uses the Gemini API to dynamically determine if the sites you visit are aligned with your objective.
-* **Context-Aware Appeals:** If a necessary site is blocked, you can submit a short justification. The AI evaluates your reasoning against your goal and can dynamically unblock the site if the logic is sound.
-* **Strict Discipline Mechanics:** The user interface is deliberately constrained to prevent easy bypasses. Changing goals or disabling the extension requires deliberate friction.
-* **Privacy First:** Flow is entirely client-side. Your Gemini API key, daily goals, and browsing history are stored exclusively in your local browser storage (`chrome.storage.local`). The extension only transmits the domain name and page title to the AI during evaluation.
-* **Offline Fallback:** If an API key is not provided or the rate limit is reached, Flow seamlessly falls back to a traditional, static blocklist mechanism.
+1. Open the toolbar popup and add domains to your manual blocklist. No API key is required.
+2. Optionally open Settings and save your own [Gemini API key](https://aistudio.google.com/app/apikey), then set a daily goal in the popup. API availability, quotas and charges depend on your Google account.
+3. Flow generates a goal-based blocklist and evaluates other visited pages using their URL path and title. New AI decisions happen after navigation, so content can be visible while evaluation runs.
+4. On a blocked page, submit a reason for access. With a key and today's goal, the AI can grant access to that domain for the browser session (also cleared on goal change or the daily reset). Up to 15 completed appeals are allowed per day.
+5. Use Settings to manage lists, view statistics, select a theme, or enable **Whitelist-only mode**.
 
-## Prerequisites
+Whitelist entries override blocking. Domain entries match that domain and its
+subdomains; add different country domains separately. Whitelist-only mode permits
+your whitelist, approved appeals, and the built-in search/local-development domains
+in `utils/domains.js`. It works without a key or goal. Manual rules remain available
+if the AI is unavailable; there is no built-in default blocklist.
 
-To enable the dynamic AI features, you will need a free Google Gemini API key.
+The goal resets at local midnight. Flow may open its goal page on browser startup
+when a key exists and no goal is set; it does not replace Chrome's new-tab page.
+The interface has no pause/disable button, but you remain in control through Chrome's
+extension manager. This is a personal focus tool, not a tamper-proof access control.
 
-1. Navigate to [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. Create a new API key.
-3. Keep this key secure; you will need to paste it into the extension's settings.
+## Privacy
 
-## Installation
+AI is optional. Saving a key enables sending your goal, evaluated page domains,
+URL paths and titles, and submitted appeal text to Google Gemini. Query strings,
+fragments and URL credentials are removed from AI browsing requests. Local/session
+storage holds preferences and focus records. There is no Flow backend or analytics.
+Read [PRIVACY.md](PRIVACY.md) before enabling AI.
 
-Flow is not currently published on the Chrome Web Store and must be loaded as an unpacked extension.
+## Develop or load unpacked
 
-1. Clone or download this repository to your local machine.
-2. Open Google Chrome and navigate to `chrome://extensions/`.
-3. Enable **Developer mode** using the toggle switch in the top right corner.
-4. Click the **Load unpacked** button in the top left.
-5. Select the `Flow` directory from your file system.
+No build step or runtime dependencies are required. Chrome 102 or later is required;
+use a current Chrome release for day-to-day use.
 
-## Configuration & Usage
+1. Clone/download this repository.
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Choose **Load unpacked** and select the directory containing `manifest.json`.
+4. After editing, reload the extension and refresh existing test tabs.
 
-1. **API Setup:** After installation, click the Flow icon in your toolbar and open the **Settings** (gear icon). Paste your Gemini API key into the designated field and save.
-2. **Set Your Intent:** Open a new tab or click the extension popup to set your focus goal for the session.
-3. **Browse:** Navigate the web normally. When you visit a new domain, Flow will evaluate it. If it is deemed a distraction, the page will be immediately blocked.
-4. **Appeals:** On the block screen, you have the option to explain why the site is necessary for your work. If the AI approves your reasoning, the site will be unblocked for the remainder of the session.
+Use an isolated Chrome profile for testing so your everyday lists and goals stay intact.
 
-## Architecture & Permissions
+## Verify and package an update
 
-Flow is built on Manifest V3. It leverages the `declarativeNetRequest` API for performant, synchronous blocking before a page even renders, preventing visual flashes of distracting content. The extension utilizes a fallback chain of lightweight Gemini models (starting with `gemini-3.1-flash-lite`) to minimize latency and manage API rate limits efficiently.
+With Node.js 22+ and Python 3 installed:
+
+```sh
+npm test
+npm run package
+```
+
+Tests use mocked Chrome and Gemini APIs; no real key or API charges are required.
+Packaging produces `dist/flow-1.0.1.zip` containing only extension runtime files,
+its license and privacy policy. No repository metadata, test code or local secrets
+are included. Upload the ZIP to your existing Flow item in the Chrome Web Store
+Developer Dashboard, review its privacy disclosures and submit the update for review.
+The source version must exceed the currently published version. Before submitting,
+test AI analysis and appeals with your own key and provide a public URL for
+[PRIVACY.md](PRIVACY.md) in the dashboard's privacy-policy field.
+
+## Permissions and architecture
+
+- `storage`: preferences, goals, API key, statistics, appeals and session decisions.
+- `declarativeNetRequest`: redirect blocked top-level website requests.
+- `tabs`: read visited URLs/titles for focus evaluation and redirect distracting pages.
+- `alarms`: reset daily state and restore internal pause timers.
+- `<all_urls>`: apply site blocking and content checks across websites and contact Gemini.
+
+All executable code is bundled locally. Chrome internal pages and other protected
+surfaces cannot be blocked like normal websites. See [ARCHITECTURE.md](ARCHITECTURE.md)
+for implementation details. Released under the [MIT License](LICENSE).

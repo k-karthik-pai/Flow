@@ -12,7 +12,8 @@
   const style = document.createElement('style');
   style.id = 'flow-hide';
   style.textContent = 'html { visibility: hidden !important; }';
-  document.documentElement.appendChild(style);
+  document.documentElement?.appendChild(style);
+  const revealTimer = setTimeout(removeHide, 2000);
 
   try {
     const hostname = window.location.hostname.replace(/^www\./, '');
@@ -34,12 +35,13 @@
     const sessionAllowed = response.sessionAllowed || [];
 
     const isWhitelisted = whitelist.some((d) => matchesDomain(hostname, d));
-    const isSessionAllowed = sessionAllowed.some((allowedUrl) => window.location.href.startsWith(allowedUrl));
-    const isBlocked = allBlocked.some((d) => matchesDomain(hostname, d));
+    const isSessionAllowed = sessionAllowed.some((entry) => matchesDomain(hostname, entry));
+    const isBlocked = response.whitelistOnlyMode
+      ? !FlowDomains.essentialDomains.some(d => matchesDomain(hostname, d))
+      : allBlocked.some((d) => matchesDomain(hostname, d));
 
     if (isBlocked && !isWhitelisted && !isSessionAllowed) {
       // Record stat and redirect to blocked page
-      chrome.runtime.sendMessage({ type: 'RECORD_BLOCK', domain: hostname });
       const blockedUrl = chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(hostname)}&url=${encodeURIComponent(window.location.href)}`);
       window.location.replace(blockedUrl);
       return;
@@ -49,6 +51,7 @@
     console.debug('[Flow] Content check error:', err);
   }
 
+  clearTimeout(revealTimer);
   removeHide();
 })();
 
@@ -57,8 +60,6 @@ function removeHide() {
   if (el) el.remove();
 }
 
-function matchesDomain(hostname, blockedDomain) {
-  const h = hostname.toLowerCase().replace(/^www\./, '');
-  const b = blockedDomain.toLowerCase().replace(/^www\./, '');
-  return h === b || h.endsWith('.' + b);
+function matchesDomain(hostname, entry) {
+  return FlowDomains.matchesDomain(hostname, entry);
 }

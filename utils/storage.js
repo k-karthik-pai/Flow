@@ -1,3 +1,4 @@
+import { localDate } from './date.js';
 // utils/storage.js — Chrome Storage Helpers for Flow
 
 export const STORAGE_KEYS = {
@@ -20,7 +21,7 @@ export const STORAGE_KEYS = {
 export const MAX_APPEALS_PER_DAY = 15;
 
 export function getTodayString() {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return localDate();
 }
 
 export async function getStorage(keys) {
@@ -50,7 +51,7 @@ export async function getGoal() {
 }
 
 export async function setGoal(text) {
-  const goal = { text, date: getTodayString(), setAt: Date.now() };
+  const goal = text ? { text, date: getTodayString(), setAt: Date.now(), revision: crypto.randomUUID() } : null;
   await setStorage({ [STORAGE_KEYS.GOAL]: goal });
   return goal;
 }
@@ -129,7 +130,14 @@ export async function recordAppeal(domain, userReason, aiVerdict, allowed) {
   return newAppeal;
 }
 
-export async function incrementBlockedStat(domain) {
+let statQueue = Promise.resolve();
+export function incrementBlockedStat(domain) {
+  const task = statQueue.then(() => writeBlockedStat(domain));
+  statQueue = task.catch(() => {});
+  return task;
+}
+
+async function writeBlockedStat(domain) {
   const today = getTodayString();
   const { stats } = await getStorage([STORAGE_KEYS.STATS]);
   const currentStats = stats || {};
@@ -137,7 +145,7 @@ export async function incrementBlockedStat(domain) {
   // Prune stats older than 30 days
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const cutoffDate = thirtyDaysAgo.toISOString().slice(0, 10);
+  const cutoffDate = localDate(thirtyDaysAgo);
   
   for (const date in currentStats) {
     if (date < cutoffDate) {

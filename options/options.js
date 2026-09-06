@@ -1,8 +1,11 @@
+import { saveSiteList } from '../utils/messages.js';
+import '../utils/domains.js';
+import { localDate } from '../utils/date.js';
 // options.js — Flow Settings
 
 function escapeHTML(str) {
   if (!str) return '';
-  return str.replace(/[&<>'"]/g, tag => ({
+  return String(str).replace(/[&<>'"]/g, tag => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[tag]));
 }
@@ -102,11 +105,12 @@ document.getElementById('manual-input').addEventListener('keydown', (e) => { if 
 
 async function addManual() {
   const input = document.getElementById('manual-input');
-  const domains = input.value.split(',').map((d) => d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]).filter(Boolean);
-  if (!domains.length) return;
+  const domains = input.value.split(',').map((d) => FlowDomains.normalizeDomain(d.trim()));
+  if (!domains.length || domains.some(d => !d)) { input.setCustomValidity('Enter valid domains or HTTP(S) URLs, separated by commas.'); input.reportValidity(); return; }
+  input.setCustomValidity('');
   const updated = [...new Set([...(state.manualBlocklist || []), ...domains])];
-  await chrome.storage.local.set({ manualBlocklist: updated });
-  await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
+  if (updated.length > 300) { alert('A maximum of 300 sites per list is supported.'); return; }
+  await saveSiteList('manualBlocklist', updated);
   state.manualBlocklist = updated;
   input.value = '';
   loadBlocklistTab();
@@ -114,8 +118,8 @@ async function addManual() {
 
 async function removeManual(domain) {
   const updated = (state.manualBlocklist || []).filter((d) => d !== domain);
-  await chrome.storage.local.set({ manualBlocklist: updated });
-  await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
+  if (updated.length > 300) { alert('A maximum of 300 sites per list is supported.'); return; }
+  await saveSiteList('manualBlocklist', updated);
   state.manualBlocklist = updated;
   loadBlocklistTab();
 }
@@ -138,11 +142,12 @@ document.getElementById('whitelist-input').addEventListener('keydown', (e) => { 
 
 async function addWhitelist() {
   const input = document.getElementById('whitelist-input');
-  const domains = input.value.split(',').map((d) => d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]).filter(Boolean);
-  if (!domains.length) return;
+  const domains = input.value.split(',').map((d) => FlowDomains.normalizeDomain(d.trim()));
+  if (!domains.length || domains.some(d => !d)) { input.setCustomValidity('Enter valid domains or HTTP(S) URLs, separated by commas.'); input.reportValidity(); return; }
+  input.setCustomValidity('');
   const updated = [...new Set([...(state.whitelist || []), ...domains])];
-  await chrome.storage.local.set({ whitelist: updated });
-  await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
+  if (updated.length > 300) { alert('A maximum of 300 sites per list is supported.'); return; }
+  await saveSiteList('whitelist', updated);
   state.whitelist = updated;
   input.value = '';
   loadWhitelistTab();
@@ -150,8 +155,8 @@ async function addWhitelist() {
 
 async function removeWhitelist(domain) {
   const updated = (state.whitelist || []).filter((d) => d !== domain);
-  await chrome.storage.local.set({ whitelist: updated });
-  await chrome.runtime.sendMessage({ type: 'SYNC_RULES' });
+  if (updated.length > 300) { alert('A maximum of 300 sites per list is supported.'); return; }
+  await saveSiteList('whitelist', updated);
   state.whitelist = updated;
   loadWhitelistTab();
 }
@@ -184,7 +189,7 @@ function renderSL(items, listId, badgeId, onRemove, isAI) {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 function loadStatsTab() {
   const stats = state.stats || {};
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDate();
   const todayData = stats[today] || { blocked: 0, topDomains: {} };
   document.getElementById('stat-today').textContent = todayData.blocked || 0;
   let total = 0;
@@ -196,7 +201,7 @@ function loadStatsTab() {
   document.getElementById('stat-total').textContent = total;
   let streak = 0;
   const d = new Date();
-  while (stats[d.toISOString().slice(0, 10)]?.blocked > 0) { streak++; d.setDate(d.getDate() - 1); }
+  while (stats[localDate(d)]?.blocked > 0) { streak++; d.setDate(d.getDate() - 1); }
   document.getElementById('stat-streak').textContent = streak;
 
   const topList = document.getElementById('top-sites-list');
@@ -206,7 +211,7 @@ function loadStatsTab() {
   sorted.forEach(([domain, count]) => {
     const li = document.createElement('li');
     li.className = 'slist-item';
-    li.innerHTML = `<span class="slist-name">${domain}</span><span class="slist-reason">${count}×</span>`;
+    li.innerHTML = `<span class="slist-name">${escapeHTML(domain)}</span><span class="slist-reason">${count}×</span>`;
     topList.appendChild(li);
   });
 }
