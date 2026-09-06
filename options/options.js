@@ -122,8 +122,16 @@ async function removeManual(domain) {
 
 // ─── Whitelist ────────────────────────────────────────────────────────────────
 function loadWhitelistTab() {
+  const toggle = document.getElementById('toggle-whitelist-only');
+  if (toggle) toggle.checked = Boolean(state.whitelistOnlyMode);
   renderSL(state.whitelist || [], 'whitelist-sites-list', 'whitelist-badge', removeWhitelist, false);
 }
+
+document.getElementById('toggle-whitelist-only')?.addEventListener('change', async (e) => {
+  const enabled = e.target.checked;
+  await chrome.runtime.sendMessage({ type: 'SET_WHITELIST_ONLY_MODE', enabled });
+  state.whitelistOnlyMode = enabled;
+});
 
 document.getElementById('btn-add-whitelist').addEventListener('click', addWhitelist);
 document.getElementById('whitelist-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') addWhitelist(); });

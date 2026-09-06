@@ -94,6 +94,18 @@
     <section class="panel" id="tab-whitelist">
       <h1 class="page-title">Always Allow</h1>
       <p class="page-desc">These sites are never blocked, even by AI.</p>
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-hd">
+          <div>
+            <div class="card-title">Whitelist-Only Focus Mode</div>
+            <div class="card-sub">When active, block all websites except the allowed sites listed below</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-whitelist-only" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
       <div class="card">
         <div class="card-hd"><div class="card-title">Allowed sites</div><span class="badge" id="whitelist-badge">0</span></div>
         <div class="card-add"><input type="text" class="input" id="whitelist-input" placeholder="coursera.org, notion.so" /><button class="btn btn-success btn-sm" id="btn-add-whitelist">Add</button></div>

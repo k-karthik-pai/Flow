@@ -3,7 +3,7 @@ import {
   getGoal, setGoal, getManualBlocklist, getAIBlocklist, getWhitelist,
   getApiKey, isBlockingEnabled, getAppealsInfo, recordAppeal,
   incrementBlockedStat, resetDailyData, setStorage, getStorage,
-  STORAGE_KEYS, getTodayString,
+  STORAGE_KEYS, getTodayString, getWhitelistOnlyMode,
 } from './utils/storage.js';
 import { analyzeGoal, judgeAppeal, evaluateDomainDynamically } from './utils/ai.js';
 import { updateAllRules, clearAllRules } from './utils/rules.js';
@@ -104,13 +104,14 @@ async function syncRules() {
       await clearAllRules();
       return;
     }
-    const [manual, ai, whitelist] = await Promise.all([
+    const [manual, ai, whitelist, whitelistOnlyMode] = await Promise.all([
       getManualBlocklist(),
       getAIBlocklist(),
       getWhitelist(),
+      getWhitelistOnlyMode(),
     ]);
     const { sessionAllowed } = await getSessionState();
-    await updateAllRules(manual, ai, whitelist, sessionAllowed);
+    await updateAllRules(manual, ai, whitelist, sessionAllowed, whitelistOnlyMode);
   }).catch((err) => console.error('[Flow] Sync rules error:', err));
   return syncQueue;
 }
@@ -171,9 +172,19 @@ async function handleMessage(msg, sender) {
         if (verdict.allow) {
           const state = await getSessionState();
           const sessionAllowed = state.sessionAllowed;
-          sessionAllowed.push(url || `https://${domain}`);
-          if (sessionAllowed.length > 500) sessionAllowed.shift();
-          await updateSessionState({ sessionAllowed });
+          const evaluatedDomains = state.evaluatedDomains;
+          if (domain && !sessionAllowed.includes(domain)) sessionAllowed.push(domain);
+          if (url && !sessionAllowed.includes(url)) sessionAllowed.push(url);
+          while (sessionAllowed.length > 500) sessionAllowed.shift();
+
+          // Clear any 'blocked' cache for this domain/url so onUpdated allows it
+          Object.keys(evaluatedDomains).forEach((k) => {
+            if (k.includes(domain) || (url && k === url)) {
+              evaluatedDomains[k] = 'allowed';
+            }
+          });
+
+          await updateSessionState({ sessionAllowed, evaluatedDomains });
           await syncRules();
         }
         await recordAppeal(domain, reason, verdict.reasoning, verdict.allow);
@@ -211,8 +222,14 @@ async function handleMessage(msg, sender) {
       return { success: true };
     }
 
+    case 'SET_WHITELIST_ONLY_MODE': {
+      await setStorage({ [STORAGE_KEYS.WHITELIST_ONLY_MODE]: Boolean(msg.enabled) });
+      await syncRules();
+      return { success: true };
+    }
+
     case 'GET_STATE': {
-      const [goal, manual, ai, whitelist, apiKey, enabled, appealsInfo, pause, stats, state] =
+      const [goal, manual, ai, whitelist, apiKey, enabled, appealsInfo, pause, stats, state, whitelistOnlyMode] =
         await Promise.all([
           getGoal(),
           getManualBlocklist(),
@@ -224,6 +241,7 @@ async function handleMessage(msg, sender) {
           getStorage([STORAGE_KEYS.PAUSE_UNTIL]),
           getStorage([STORAGE_KEYS.STATS]),
           getSessionState(),
+          getWhitelistOnlyMode(),
         ]);
       return {
         goal,
@@ -236,11 +254,12 @@ async function handleMessage(msg, sender) {
         appealsInfo,
         sessionAllowed: state.sessionAllowed,
         stats: stats.stats || {},
+        whitelistOnlyMode,
       };
     }
 
     case 'CHECK_BLOCKED': {
-      const [enabled, manual, ai, whitelist, apiKey, goal, state] = await Promise.all([
+      const [enabled, manual, ai, whitelist, apiKey, goal, state, whitelistOnlyMode] = await Promise.all([
         isBlockingEnabled(),
         getManualBlocklist(),
         getAIBlocklist(),
@@ -248,6 +267,7 @@ async function handleMessage(msg, sender) {
         getApiKey(),
         getGoal(),
         getSessionState(),
+        getWhitelistOnlyMode(),
       ]);
       return {
         blockingEnabled: enabled,
@@ -255,6 +275,7 @@ async function handleMessage(msg, sender) {
         aiBlocklist: ai,
         whitelist,
         sessionAllowed: state.sessionAllowed,
+        whitelistOnlyMode,
       };
     }
 
@@ -276,23 +297,37 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const enabled = await isBlockingEnabled();
   if (!enabled) return;
 
-  const [apiKey, goal, manual, ai, whitelist] = await Promise.all([
-    getApiKey(), getGoal(), getManualBlocklist(), getAIBlocklist(), getWhitelist()
+  const [apiKey, goal, manual, ai, whitelist, whitelistOnlyMode] = await Promise.all([
+    getApiKey(), getGoal(), getManualBlocklist(), getAIBlocklist(), getWhitelist(), getWhitelistOnlyMode()
   ]);
 
-  if (!apiKey || !goal) return;
+  if (!goal) return;
 
   try {
     const urlObj = new URL(tab.url);
     const domain = urlObj.hostname.replace(/^www\./, '');
-    
+
     const state = await getSessionState();
     const evaluatedDomains = state.evaluatedDomains;
     const sessionAllowed = state.sessionAllowed;
 
-    // Check caches and lists
+    // 1. Essential domains and whitelisted sites always bypass
     if (ESSENTIAL_DOMAINS.includes(domain)) return;
-    
+    if (whitelist.some(d => domain.includes(d) || d.includes(domain))) return;
+    if (sessionAllowed.some(allowed => tab.url.includes(allowed) || domain.includes(allowed))) return;
+
+    // 2. If Whitelist-Only Mode is enabled, block immediately if not whitelisted or sessionAllowed
+    if (whitelistOnlyMode) {
+      console.log(`[Flow] Whitelist-Only Mode blocked: ${tab.url}`);
+      chrome.tabs.update(tabId, {
+        url: chrome.runtime.getURL(`blocked.html?site=${encodeURIComponent(domain)}&url=${encodeURIComponent(tab.url)}`)
+      });
+      return;
+    }
+
+    if (!apiKey) return;
+
+    // 3. Check cached verdicts or manual/AI blocklists
     const cached = evaluatedDomains[tab.url];
     if (cached === 'evaluating' || cached === 'allowed') return;
     if (cached === 'blocked') {
@@ -300,13 +335,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       return;
     }
 
-    if (whitelist.some(d => domain.includes(d) || d.includes(domain))) return;
     if (manual.some(d => domain.includes(d) || d.includes(domain))) return;
     if (ai.some(e => {
       const b = typeof e === 'string' ? e : e.domain;
       return domain.includes(b) || b.includes(domain);
     })) return;
-    if (sessionAllowed.some(allowedUrl => tab.url.startsWith(allowedUrl))) return;
 
     // Mark as evaluating to prevent duplicate calls
     evaluatedDomains[tab.url] = 'evaluating';

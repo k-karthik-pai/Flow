@@ -59,6 +59,11 @@ function renderUI() {
     chip.style.display = 'none';
   }
 
+  const strictChip = document.getElementById('strict-chip');
+  if (strictChip) {
+    strictChip.style.display = state.whitelistOnlyMode ? '' : 'none';
+  }
+
   // Lists
   renderList(state.manualBlocklist || [], 'manual-list', 'manual-count', false);
   const ai = state.aiBlocklist || [];

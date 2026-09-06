@@ -13,7 +13,8 @@ export const STORAGE_KEYS = {
   APPEALS_RESET_DATE: 'appealsResetDate',
   STATS: 'stats',
   ONBOARDED: 'onboarded',
-  THEME: 'theme', // 'light' | 'dark' | 'system'
+  THEME: 'theme',
+  WHITELIST_ONLY_MODE: 'whitelistOnlyMode',
 };
 
 export const MAX_APPEALS_PER_DAY = 15;
@@ -166,4 +167,9 @@ export async function resetDailyData() {
     [STORAGE_KEYS.PAUSE_UNTIL]: null,
     [STORAGE_KEYS.APPEALS]: [],
   });
+}
+
+export async function getWhitelistOnlyMode() {
+  const { whitelistOnlyMode } = await getStorage([STORAGE_KEYS.WHITELIST_ONLY_MODE]);
+  return Boolean(whitelistOnlyMode);
 }

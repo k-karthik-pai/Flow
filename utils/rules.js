@@ -57,13 +57,39 @@ function makeWhitelistRule(domain, ruleId) {
   };
 }
 
-function makeSessionAllowRule(url, ruleId) {
+const ESSENTIAL_ALLOW_ID_START = 50000;
+const WHITELIST_ONLY_BLOCK_ID = 60000;
+
+const ESSENTIAL_DOMAINS = [
+  'google.com', 'google.co.in', 'google.co.uk',
+  'bing.com', 'duckduckgo.com', 'yahoo.com',
+  'localhost', '127.0.0.1'
+];
+
+function makeSessionAllowRule(item, ruleId) {
+  let domain = item;
+  if (item.startsWith('http')) {
+    try {
+      domain = new URL(item).hostname.replace(/^www\./, '');
+    } catch {
+      domain = item;
+    }
+  }
+  return makeWhitelistRule(domain, ruleId);
+}
+
+function makeCatchAllBlockRule(ruleId) {
+  const base = chrome.runtime.getURL(BLOCKED_PAGE_PATH);
+  const regexSub = `${base}?site=non-whitelisted&url=\\0`;
   return {
     id: ruleId,
-    priority: 10,
-    action: { type: 'allow' },
+    priority: 2,
+    action: {
+      type: 'redirect',
+      redirect: { regexSubstitution: regexSub },
+    },
     condition: {
-      urlFilter: url,
+      regexFilter: '^https?://.*$',
       resourceTypes: ['main_frame'],
     },
   };
@@ -76,47 +102,52 @@ async function getAllExistingRuleIds() {
 
 /**
  * Syncs all blocking and whitelist rules with the current lists.
- * @param {string[]} manualBlocklist - Manually blocked domains
- * @param {Array<{domain: string}>} aiBlocklist - AI-blocked domains
- * @param {string[]} whitelist - Always-allow domains
- * @param {string[]} sessionAllowed - Domains allowed via appeal this session
  */
 export async function updateAllRules(
   manualBlocklist = [],
   aiBlocklist = [],
   whitelist = [],
-  sessionAllowed = []
+  sessionAllowed = [],
+  whitelistOnlyMode = false
 ) {
   const existingIds = await getAllExistingRuleIds();
 
   const newRules = [];
 
-  // Whitelist rules (highest priority)
+  // Whitelist rules (highest priority: 10)
   whitelist.forEach((domain, i) => {
     newRules.push(makeWhitelistRule(domain, WHITELIST_ID_START + i));
   });
 
-  // Session-allowed rules (also high priority)
-  sessionAllowed.forEach((url, i) => {
-    newRules.push(makeSessionAllowRule(url, SESSION_ALLOW_ID_START + i));
+  // Session-allowed rules (highest priority: 10)
+  sessionAllowed.forEach((item, i) => {
+    newRules.push(makeSessionAllowRule(item, SESSION_ALLOW_ID_START + i));
   });
 
-  // Manual block rules
-  manualBlocklist.forEach((domain, i) => {
-    newRules.push(makeBlockRule(domain, MANUAL_BLOCK_ID_START + i));
-  });
+  if (whitelistOnlyMode) {
+    // In Whitelist-Only mode, allow essential domains at priority 10
+    ESSENTIAL_DOMAINS.forEach((domain, i) => {
+      newRules.push(makeWhitelistRule(domain, ESSENTIAL_ALLOW_ID_START + i));
+    });
+    // And block everything else at priority 2
+    newRules.push(makeCatchAllBlockRule(WHITELIST_ONLY_BLOCK_ID));
+  } else {
+    // Normal Blacklist Mode
+    manualBlocklist.forEach((domain, i) => {
+      newRules.push(makeBlockRule(domain, MANUAL_BLOCK_ID_START + i));
+    });
 
-  // AI block rules
-  aiBlocklist.forEach((entry, i) => {
-    const domain = typeof entry === 'string' ? entry : entry.domain;
-    newRules.push(makeBlockRule(domain, AI_BLOCK_ID_START + i));
-  });
+    aiBlocklist.forEach((entry, i) => {
+      const domain = typeof entry === 'string' ? entry : entry.domain;
+      newRules.push(makeBlockRule(domain, AI_BLOCK_ID_START + i));
+    });
+  }
 
   const newIds = newRules.map((r) => r.id);
 
   try {
     await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: existingIds, // Remove all first, then add fresh
+      removeRuleIds: existingIds,
       addRules: newRules,
     });
   } catch (err) {
